@@ -1,0 +1,131 @@
+{
+    "TEST-001": {
+        "description": "Low-risk adult profile",
+        "features": {
+            "age_group": "25-29",
+            "sex": "female",
+            "race": "white",
+            "education": "college graduate",
+            "income": "high",
+            "bmi_category": "normal",
+            "smoking": "no",
+            "physical_activity": "yes",
+            "general_health": "excellent",
+            "physical_health": "0-13 days",
+            "mental_health": "0-13 days",
+            "high_blood_pressure": "no",
+            "high_cholesterol": "no",
+            "heart_disease": "no",
+            "stroke": "no",
+            "kidney_disease": "no",
+            "healthcare_coverage": "yes",
+            "personal_provider": "yes",
+            "medical_cost": "no",
+            "checkup": "within past year"
+        }
+    },
+
+    "TEST-002": {
+        "description": "Moderate-risk profile",
+        "features": {
+            "age_group": "45-49",
+            "sex": "male",
+            "race": "white",
+            "education": "some college",
+            "income": "middle",
+            "bmi_category": "overweight",
+            "smoking": "former smoker",
+            "physical_activity": "no",
+            "general_health": "good",
+            "physical_health": "14+ days",
+            "mental_health": "0-13 days",
+            "high_blood_pressure": "yes",
+            "high_cholesterol": "yes",
+            "heart_disease": "no",
+            "stroke": "no",
+            "kidney_disease": "no",
+            "healthcare_coverage": "yes",
+            "personal_provider": "yes",
+            "medical_cost": "no",
+            "checkup": "within past year"
+        }
+    },
+
+    "TEST-003": {
+        "description": "Higher-risk older adult",
+        "features": {
+            "age_group": "65-69",
+            "sex": "male",
+            "race": "white",
+            "education": "high school",
+            "income": "low",
+            "bmi_category": "obese",
+            "smoking": "current smoker",
+            "physical_activity": "no",
+            "general_health": "fair",
+            "physical_health": "14+ days",
+            "mental_health": "14+ days",
+            "high_blood_pressure": "yes",
+            "high_cholesterol": "yes",
+            "heart_disease": "yes",
+            "stroke": "no",
+            "kidney_disease": "yes",
+            "healthcare_coverage": "yes",
+            "personal_provider": "yes",
+            "medical_cost": "yes",
+            "checkup": "within past year"
+        }
+    },
+
+    "TEST-004": {
+        "description": "Multiple-risk-factor profile",
+        "features": {
+            "age_group": "55-59",
+            "sex": "female",
+            "race": "black",
+            "education": "high school",
+            "income": "low",
+            "bmi_category": "obese",
+            "smoking": "current smoker",
+            "physical_activity": "no",
+            "general_health": "poor",
+            "physical_health": "14+ days",
+            "mental_health": "14+ days",
+            "high_blood_pressure": "yes",
+            "high_cholesterol": "yes",
+            "heart_disease": "yes",
+            "stroke": "yes",
+            "kidney_disease": "yes",
+            "healthcare_coverage": "no",
+            "personal_provider": "no",
+            "medical_cost": "yes",
+            "checkup": "5+ years ago"
+        }
+    },
+
+    "TEST-005": {
+        "description": "Boundary/neutral profile",
+        "features": {
+            "age_group": "35-39",
+            "sex": "male",
+            "race": "white",
+            "education": "some college",
+            "income": "middle",
+            "bmi_category": "overweight",
+            "smoking": "never smoker",
+            "physical_activity": "yes",
+            "general_health": "good",
+            "physical_health": "0-13 days",
+            "mental_health": "0-13 days",
+            "high_blood_pressure": "no",
+            "high_cholesterol": "no",
+            "heart_disease": "no",
+            "stroke": "no",
+            "kidney_disease": "no",
+            "healthcare_coverage": "yes",
+            "personal_provider": "yes",
+            "medical_cost": "no",
+            "checkup": "within past year"
+        }
+    }
+}
