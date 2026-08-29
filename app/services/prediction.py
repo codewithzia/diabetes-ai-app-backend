@@ -1,15 +1,18 @@
 """Prediction pipeline: feature mapping, risk scoring, and explanations."""
 
 import math
+import uuid
 
 from ..constants import (
     FEATURE_MAPPINGS,
     FEATURE_DISPLAY_NAMES,
     FEATURE_VALUE_DISPLAY,
     FEATURE_EXPLANATIONS,
+    MODEL_INFO,
     MODEL_WEIGHTS,
     OPTIMIZED_THRESHOLD,
 )
+from ..stores import prediction_store
 
 
 def map_features(raw_features: dict) -> dict:
@@ -94,9 +97,21 @@ def run_prediction_pipeline(features: dict) -> dict:
     probability = compute_risk_probability(mapped_features)
     prediction = 1 if probability >= OPTIMIZED_THRESHOLD else 0
 
-    return {
+    prediction_id = f"P-{uuid.uuid4().hex[:12].upper()}"
+
+    result = {
         "prediction": prediction,
         "probability": round(probability, 4),
         "risk_category": get_risk_category(probability),
+        "model_version": MODEL_INFO["current_version"],
+        "threshold": OPTIMIZED_THRESHOLD,
+        "prediction_id": prediction_id,
         "explanations": generate_explanations(mapped_features),
     }
+
+    prediction_store[prediction_id] = {
+        "features": mapped_features,
+        "result": result,
+    }
+
+    return result
