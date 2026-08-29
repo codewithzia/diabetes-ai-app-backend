@@ -12,7 +12,7 @@ from ..constants import (
     MODEL_WEIGHTS,
     OPTIMIZED_THRESHOLD,
 )
-from ..stores import prediction_store
+from ..database import save_prediction
 
 
 def map_features(raw_features: dict) -> dict:
@@ -109,9 +109,6 @@ def run_prediction_pipeline(features: dict) -> dict:
         "explanations": generate_explanations(mapped_features),
     }
 
-    prediction_store[prediction_id] = {
-        "features": mapped_features,
-        "result": result,
-    }
+    save_prediction(prediction_id, mapped_features, result)
 
     return result

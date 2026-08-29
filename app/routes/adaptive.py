@@ -6,7 +6,7 @@ from flask import Blueprint, jsonify
 
 from ..config import APP_MODE
 from ..constants import MODEL_INFO, PERFORMANCE_METRICS, FEEDBACK_METRICS
-from ..stores import feedback_store, prediction_store
+from ..database import count_feedback, count_predictions
 
 adaptive_bp = Blueprint("adaptive", __name__)
 
@@ -17,8 +17,8 @@ def adaptive_metrics():
     return jsonify({
         "performance_metrics": PERFORMANCE_METRICS,
         "feedback_metrics": FEEDBACK_METRICS,
-        "total_feedback": len(feedback_store) + MODEL_INFO["feedback_observations"],
-        "total_predictions": len(prediction_store) + 50000,
+        "total_feedback": count_feedback() + MODEL_INFO["feedback_observations"],
+        "total_predictions": count_predictions() + 50000,
         "current_version": MODEL_INFO["current_version"],
         "last_update": MODEL_INFO["last_update"],
     })

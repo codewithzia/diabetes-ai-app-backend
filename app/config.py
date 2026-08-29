@@ -18,3 +18,9 @@ if APP_MODE not in ALLOWED_MODES:
 CORS_ORIGINS = ["http://localhost:4200", "http://127.0.0.1:4200"]
 
 TEST_DATA_PATH = BASE_DIR / "test_data" / "test_patients.json"
+
+# Separate database per mode so test and production data stay isolated:
+#   test mode       -> database/test.db
+#   production mode -> database/production.db
+DATABASE_DIR = BASE_DIR / "database"
+DATABASE_PATH = DATABASE_DIR / f"{APP_MODE}.db"

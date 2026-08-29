@@ -21,7 +21,7 @@ backend/
     ├── __init__.py         # Application factory (create_app)
     ├── config.py           # APP_MODE validation, CORS origins, paths
     ├── constants.py        # Model metadata, metrics, feature mappings, weights
-    ├── stores.py           # In-memory feedback/prediction stores
+    ├── database.py         # SQLite persistence for predictions and feedback
     ├── services/
     │   ├── prediction.py   # Feature mapping, risk scoring, explanations, pipeline
     │   └── test_data.py    # Test patient loading
@@ -59,6 +59,13 @@ Set via the `APP_MODE` environment variable (default: `test`):
 ```powershell
 $env:APP_MODE = "production"; py app.py
 ```
+
+Each mode uses its own SQLite database so test and production data never mix:
+
+| Mode         | Database file             |
+|--------------|---------------------------|
+| `test`       | `database/test.db`        |
+| `production` | `database/production.db`  |
 
 ## API Endpoints
 
@@ -128,5 +135,5 @@ This exercises the health check, test cases, all five test predictions, invalid-
 ## Notes
 
 - Model inference and explanations are currently **simulated** using fixed weights (`app/constants.py`); in production these would come from the trained Logistic Regression model and preprocessing pipeline.
-- Feedback and predictions are stored **in memory** and reset on restart; replace with persistent storage for production.
+- Feedback and predictions are persisted to the mode-specific **SQLite database** (`app/database.py`), with `predictions` and `feedback` tables.
 - The Flask development server is used for research purposes only — use a production WSGI server (e.g. waitress, gunicorn) for deployment.
