@@ -50,33 +50,75 @@ MODEL_COMPARISON = [
 OPTIMIZED_THRESHOLD = 0.38
 
 # ---------------------------------------------------------------------------
-# Feature mapping: human-readable values to BRFSS codes
-# (In production, this would be handled by the trained preprocessing pipeline)
+# Feature mapping: frontend values to raw BRFSS 2021 codes, matching the
+# codes the trained preprocessing pipeline was fitted on.
 # ---------------------------------------------------------------------------
 FEATURE_MAPPINGS = {
+    # _AGEG5YR: 1-13 age groups
     "age_group": {
         "18-24": 1, "25-29": 2, "30-34": 3, "35-39": 4, "40-44": 5,
         "45-49": 6, "50-54": 7, "55-59": 8, "60-64": 9, "65-69": 10,
         "70-74": 11, "75-79": 12, "80+": 13,
     },
-    "sex": {"male": 1, "female": 0},
-    "race": {"white": 1, "black": 2, "asian": 4, "native_american": 3, "hispanic": 5, "other": 6},
-    "education": {"no_school": 1, "elementary": 2, "some_high_school": 3, "high_school": 4, "some_college": 5, "college_graduate": 6},
-    "income": {"<10k": 1, "10k-15k": 2, "15k-20k": 3, "20k-25k": 4, "25k-35k": 5, "35k-50k": 6, "50k-75k": 7, "75k+": 8},
+    # _SEX: 1 = male, 2 = female
+    "sex": {"male": 1, "female": 2},
+    # _RACE: 1 = White, 2 = Black, 3 = AI/AN, 4 = Asian, 6 = Other, 8 = Hispanic
+    "race": {"white": 1, "black": 2, "native_american": 3, "asian": 4, "hispanic": 8, "other": 6},
+    # _EDUCAG: 1 = did not graduate HS, 2 = graduated HS, 3 = some college, 4 = graduated college
+    "education": {"no_school": 1, "elementary": 1, "some_high_school": 1, "high_school": 2, "some_college": 3, "college_graduate": 4},
+    # _INCOMG1: 1 = <$15k, 2 = $15-25k, 3 = $25-35k, 4 = $35-50k, 5 = $50-100k
+    "income": {"<10k": 1, "10k-15k": 1, "15k-20k": 2, "20k-25k": 2, "25k-35k": 3, "35k-50k": 4, "50k-75k": 5, "75k+": 5},
+    # _BMI5CAT: 1 = underweight, 2 = normal, 3 = overweight, 4 = obese
     "bmi_category": {"underweight": 1, "normal": 2, "overweight": 3, "obese": 4},
-    "smoking": {"yes": 1, "no": 0},
-    "physical_activity": {"yes": 1, "no": 0},
-    "hypertension": {"yes": 1, "no": 0, "borderline": 2},
-    "high_cholesterol": {"yes": 1, "no": 0, "borderline": 2},
-    "cardiovascular_disease": {"yes": 1, "no": 0},
-    "stroke": {"yes": 1, "no": 0},
-    "kidney_disease": {"yes": 1, "no": 0},
-    "general_health": {"excellent": 5, "very_good": 4, "good": 3, "fair": 2, "poor": 1},
-    "health_insurance": {"yes": 1, "no": 0},
-    "personal_provider": {"yes": 1, "no": 0},
-    "medical_cost": {"yes": 1, "no": 0},
-    "checkup": {"past_year": 1, "past_2_years": 2, "past_5_years": 3, "5_plus_years": 4, "never": 5},
+    # _SMOKER3: 1 = current smoker, 4 = never smoked
+    "smoking": {"yes": 1, "no": 4},
+    # _TOTINDA: 1 = physically active, 2 = not active
+    "physical_activity": {"yes": 1, "no": 2},
+    # _RFHYPE6: 1 = no, 2 = yes (borderline is not coded as hypertension)
+    "hypertension": {"yes": 2, "no": 1, "borderline": 1},
+    # _RFCHOL3: 1 = no, 2 = yes (borderline is not coded as high cholesterol)
+    "high_cholesterol": {"yes": 2, "no": 1, "borderline": 1},
+    # _MICHD: 1 = yes, 2 = no
+    "cardiovascular_disease": {"yes": 1, "no": 2},
+    # CVDSTRK3: 1 = yes, 2 = no
+    "stroke": {"yes": 1, "no": 2},
+    # CHCKDNY2: 1 = yes, 2 = no
+    "kidney_disease": {"yes": 1, "no": 2},
+    # _RFHLTH: 1 = good or better, 2 = fair or poor
+    "general_health": {"excellent": 1, "very_good": 1, "good": 1, "fair": 2, "poor": 2},
+    # _HLTHPLN: 1 = yes, 2 = no
+    "health_insurance": {"yes": 1, "no": 2},
+    # PERSDOC3: 1 = yes one provider, 2 = more than one, 3 = none
+    "personal_provider": {"yes": 1, "no": 3},
+    # MEDCOST1: 1 = yes, 2 = no
+    "medical_cost": {"yes": 1, "no": 2},
+    # CHECKUP1: 1-4 time categories, 8 = never
+    "checkup": {"past_year": 1, "past_2_years": 2, "past_5_years": 3, "5_plus_years": 4, "never": 8},
 }
+
+# Frontend feature key -> raw BRFSS column name (model input)
+FRONTEND_TO_BRFSS = {
+    "age_group": "_AGEG5YR",
+    "sex": "_SEX",
+    "race": "_RACE",
+    "education": "_EDUCAG",
+    "income": "_INCOMG1",
+    "bmi_category": "_BMI5CAT",
+    "smoking": "_SMOKER3",
+    "physical_activity": "_TOTINDA",
+    "hypertension": "_RFHYPE6",
+    "high_cholesterol": "_RFCHOL3",
+    "cardiovascular_disease": "_MICHD",
+    "stroke": "CVDSTRK3",
+    "kidney_disease": "CHCKDNY2",
+    "general_health": "_RFHLTH",
+    "health_insurance": "_HLTHPLN",
+    "personal_provider": "PERSDOC3",
+    "medical_cost": "MEDCOST1",
+    "checkup": "CHECKUP1",
+}
+
+BRFSS_TO_FRONTEND = {v: k for k, v in FRONTEND_TO_BRFSS.items()}
 
 # ---------------------------------------------------------------------------
 # Explanation display names
@@ -96,14 +138,10 @@ FEATURE_DISPLAY_NAMES = {
     "kidney_disease": "Kidney Disease",
     "cardiovascular_disease": "Cardiovascular Disease",
     "stroke": "Stroke",
-}
-
-FEATURE_VALUE_DISPLAY = {
-    "bmi_category": {1: "Underweight", 2: "Normal Weight", 3: "Overweight", 4: "Obese"},
-    "age_group": {1: "18–24 years", 2: "25–29 years", 3: "30–34 years", 4: "35–39 years", 5: "40–44 years", 6: "45–49 years", 7: "50–54 years", 8: "55–59 years", 9: "60–64 years", 10: "65–69 years", 11: "70–74 years", 12: "75–79 years", 13: "80 or older"},
-    "hypertension": {0: "No", 1: "Yes", 2: "Borderline"},
-    "general_health": {1: "Poor", 2: "Fair", 3: "Good", 4: "Very Good", 5: "Excellent"},
-    "checkup": {1: "Within the past year", 2: "Within the past 2 years", 3: "Within the past 5 years", 4: "5 or more years ago", 5: "Never"},
+    "sex": "Sex",
+    "race": "Race / Ethnicity",
+    "personal_provider": "Personal Healthcare Provider",
+    "medical_cost": "Medical Cost Barrier",
 }
 
 FEATURE_EXPLANATIONS = {
@@ -121,29 +159,10 @@ FEATURE_EXPLANATIONS = {
     "kidney_disease": "Kidney disease is a complication associated with diabetes.",
     "cardiovascular_disease": "Cardiovascular conditions share risk factors with diabetes.",
     "stroke": "Stroke history indicates vascular risk factors.",
+    "sex": "Diabetes prevalence differs between sexes in the BRFSS population.",
+    "race": "Diabetes prevalence varies across racial and ethnic groups.",
+    "personal_provider": "Having a personal healthcare provider supports early detection and management.",
+    "medical_cost": "Cost barriers to care are associated with delayed diagnosis and treatment.",
 }
 
-# ---------------------------------------------------------------------------
-# Simulated model weights for explanation generation
-# (In production, these would come from the trained Logistic Regression model)
-# ---------------------------------------------------------------------------
-MODEL_WEIGHTS = {
-    "bmi_category": 0.8119,
-    "age_group": -0.7964,
-    "hypertension": 0.5383,
-    "general_health": 0.5354,
-    "checkup": 1.1456,
-    "high_cholesterol": 0.3214,
-    "smoking": 0.1876,
-    "physical_activity": -0.2341,
-    "income": -0.1567,
-    "education": -0.0987,
-    "health_insurance": -0.1234,
-    "kidney_disease": 0.4123,
-    "cardiovascular_disease": 0.2876,
-    "stroke": 0.2154,
-    "sex": 0.0567,
-    "race": 0.0321,
-    "medical_cost": 0.1456,
-    "personal_provider": -0.0876,
-}
+

@@ -24,3 +24,24 @@ TEST_DATA_PATH = BASE_DIR / "test_data" / "test_patients.json"
 #   production mode -> database/production.db
 DATABASE_DIR = BASE_DIR / "database"
 DATABASE_PATH = DATABASE_DIR / f"{APP_MODE}.db"
+
+# Trained model artifacts. Override via environment variables to change
+# the location without touching code, e.g.:
+#   $env:PREPROCESSOR_PATH = "D:\path\to\brfss_preprocessor_final.joblib"
+#   $env:MODEL_PATH        = "D:\path\to\model.joblib"
+THESIS_DIR = Path(os.getenv("THESIS_DIR", r"D:\MSc\BRFSS_Diabetes_Thesis"))
+
+PREPROCESSOR_PATH = Path(os.getenv(
+    "PREPROCESSOR_PATH",
+    THESIS_DIR / "data" / "processed" / "ml" / "brfss_preprocessor_final.joblib",
+))
+
+MODEL_PATH = Path(os.getenv(
+    "MODEL_PATH",
+    THESIS_DIR / "results" / "ml" / "rlhf_adaptive_logistic_regression_final.joblib",
+))
+
+SELECTED_FEATURES_PATH = Path(os.getenv(
+    "SELECTED_FEATURES_PATH",
+    THESIS_DIR / "data" / "processed" / "ml" / "selected_feature_names.csv",
+))

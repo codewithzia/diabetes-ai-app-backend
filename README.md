@@ -4,7 +4,7 @@ Flask REST API for an **Adaptive AI System for Diabetes Prediction Using Human F
 
 - **Dataset:** BRFSS 2021
 - **Features:** 49 selected processed features
-- **Model:** Logistic Regression with optimized threshold (0.38)
+- **Model:** Trained Logistic Regression (`rlhf_adaptive_logistic_regression_final.joblib`) with optimized threshold (0.38), served via the fitted preprocessing pipeline (`brfss_preprocessor_final.joblib`)
 
 The API provides diabetes risk prediction, explainable AI (feature contributions), human feedback collection with a reward signal, and adaptive model management, monitoring, and versioning.
 
@@ -23,7 +23,8 @@ backend/
     ├── constants.py        # Model metadata, metrics, feature mappings, weights
     ├── database.py         # SQLite persistence for predictions and feedback
     ├── services/
-    │   ├── prediction.py   # Feature mapping, risk scoring, explanations, pipeline
+    │   ├── model_runtime.py # Trained model artifacts, inference, explanations
+    │   ├── prediction.py   # Prediction pipeline (shared by real + test endpoints)
     │   └── test_data.py    # Test patient loading
     └── routes/
         ├── health.py       # GET  /api/health
@@ -66,6 +67,19 @@ Each mode uses its own SQLite database so test and production data never mix:
 |--------------|---------------------------|
 | `test`       | `database/test.db`        |
 | `production` | `database/production.db`  |
+
+## Model Artifacts
+
+The backend loads the trained artifacts from the thesis project. Override locations via environment variables (defaults shown):
+
+| Variable | Default |
+|----------|---------|
+| `THESIS_DIR` | `D:\MSc\BRFSS_Diabetes_Thesis` |
+| `PREPROCESSOR_PATH` | `%THESIS_DIR%\data\processed\ml\brfss_preprocessor_final.joblib` |
+| `MODEL_PATH` | `%THESIS_DIR%\results\ml\rlhf_adaptive_logistic_regression_final.joblib` |
+| `SELECTED_FEATURES_PATH` | `%THESIS_DIR%\data\processed\ml\selected_feature_names.csv` |
+
+Inference chain: frontend answers → raw BRFSS codes (35 input columns incl. missingness indicators) → `preprocessor.transform` (84 features) → 49 selected feature columns → `model.predict_proba`.
 
 ## API Endpoints
 
@@ -134,6 +148,6 @@ This exercises the health check, test cases, all five test predictions, invalid-
 
 ## Notes
 
-- Model inference and explanations are currently **simulated** using fixed weights (`app/constants.py`); in production these would come from the trained Logistic Regression model and preprocessing pipeline.
+- Predictions and explanations come from the **trained model** — real `predict_proba` probabilities and coefficient-based feature contributions (`app/services/model_runtime.py`).
 - Feedback and predictions are persisted to the mode-specific **SQLite database** (`app/database.py`), with `predictions` and `feedback` tables.
 - The Flask development server is used for research purposes only — use a production WSGI server (e.g. waitress, gunicorn) for deployment.
