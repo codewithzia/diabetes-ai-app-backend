@@ -1,0 +1,27 @@
+{
+  "active_version": "V4",
+  "active_model_path": "D:\\MSc\\BRFSS_Diabetes_Thesis\\results\\ml\\rlhf_adaptive_logistic_regression_final.joblib",
+  "versions": {
+    "VA-0001": {
+      "path": "D:\\MSc\\Final_Thesis_Projects\\backend\\experiments\\models_track2\\VA-0001",
+      "status": "candidate",
+      "created_at": "2026-10-05T09:09:47.420431+00:00"
+    },
+    "VA-0002": {
+      "path": "D:\\MSc\\Final_Thesis_Projects\\backend\\experiments\\models_track2\\VA-0002",
+      "status": "candidate",
+      "created_at": "2026-10-05T09:11:11.233281+00:00"
+    },
+    "VA-0003": {
+      "path": "D:\\MSc\\Final_Thesis_Projects\\backend\\experiments\\models_track2\\VA-0003",
+      "status": "candidate",
+      "created_at": "2026-10-05T09:13:54.472205+00:00"
+    },
+    "VA-0004": {
+      "path": "D:\\MSc\\Final_Thesis_Projects\\backend\\experiments\\models_track2\\VA-0004",
+      "status": "candidate",
+      "created_at": "2026-10-05T09:19:23.583655+00:00"
+    }
+  },
+  "note": "V0-V4 are frozen thesis artefacts; adaptive candidates are VA-#### versions stored under backend/models/adaptive."
+}

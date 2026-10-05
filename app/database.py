@@ -168,14 +168,20 @@ def get_predictions_by_ids(prediction_ids: list[str]) -> dict[str, dict]:
     """Fetch prediction rows (id -> row dict) for the given ids."""
     if not prediction_ids:
         return {}
-    placeholders = ",".join("?" for _ in prediction_ids)
+    result = {}
     with _connect() as connection:
         connection.row_factory = sqlite3.Row
-        rows = connection.execute(
-            f"SELECT * FROM predictions WHERE prediction_id IN ({placeholders})",
-            prediction_ids,
-        ).fetchall()
-    return {row["prediction_id"]: dict(row) for row in rows}
+        # Chunk to stay below SQLite's variable limit for large batches.
+        for start in range(0, len(prediction_ids), 500):
+            chunk = prediction_ids[start:start + 500]
+            placeholders = ",".join("?" for _ in chunk)
+            rows = connection.execute(
+                f"SELECT * FROM predictions"
+                f" WHERE prediction_id IN ({placeholders})",
+                chunk,
+            ).fetchall()
+            result.update({row["prediction_id"]: dict(row) for row in rows})
+    return result
 
 
 def _count(table: str) -> int:
