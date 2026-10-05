@@ -1,16 +1,42 @@
-"""SQLite persistence for predictions and human feedback.
+"""Persistence for predictions and human feedback.
 
-Each application mode uses its own database file (see config.DATABASE_PATH),
-so data recorded in TEST MODE never mixes with PRODUCTION data.
+Two engines are supported, selected by config.DB_ENGINE:
+
+  mysql   -> MySQL databases selected by APP_MODE
+             (TEST_DB_NAME / PROD_DB_NAME; see config.py)
+  sqlite  -> original per-mode SQLite files (rollback path only)
+
+Either way, TEST and PRODUCTION data stay in completely separate
+databases — the environment mapping is explicit in config.py and never
+silently falls back.
 """
 
 import json
 import sqlite3
 from datetime import datetime, timezone
 
-from .config import DATABASE_DIR, DATABASE_PATH
+from .config import (
+    APP_MODE,
+    DATABASE_DIR,
+    DATABASE_PATH,
+    DB_ENGINE,
+)
 
-SCHEMA = """
+if DB_ENGINE == "mysql":
+    import pymysql
+    from pymysql.cursors import DictCursor
+
+    from .config import (
+        DB_HOST,
+        DB_PASSWORD,
+        DB_PORT,
+        DB_USER,
+        MYSQL_DB_NAME,
+    )
+
+# SQLite DDL (unchanged semantics — TEXT columns keep ISO-8601 strings
+# and JSON text exactly as before).
+SQLITE_SCHEMA = """
 CREATE TABLE IF NOT EXISTS predictions (
     prediction_id TEXT PRIMARY KEY,
     features      TEXT NOT NULL,
@@ -34,8 +60,39 @@ CREATE TABLE IF NOT EXISTS feedback (
 );
 """
 
-# Additive migrations for databases created before the extended schema.
-# ALTER TABLE ADD COLUMN is used so existing rows are preserved untouched.
+# MySQL DDL — minimal mapping of the same schema. TEXT/VARCHAR keep the
+# stored ISO timestamps and JSON text byte-identical; INTEGER keeps the
+# reward/verified_label/adaptive_processed semantics unchanged.
+MYSQL_SCHEMA = [
+    """
+CREATE TABLE IF NOT EXISTS predictions (
+    prediction_id VARCHAR(64)  NOT NULL PRIMARY KEY,
+    features      TEXT         NOT NULL,
+    result        TEXT         NOT NULL,
+    created_at    VARCHAR(64)  NOT NULL,
+    model_version VARCHAR(32)  NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+""",
+    """
+CREATE TABLE IF NOT EXISTS feedback (
+    feedback_id        VARCHAR(64) NOT NULL PRIMARY KEY,
+    prediction_id      VARCHAR(64) NULL,
+    feedback           VARCHAR(32) NULL,
+    helpfulness        VARCHAR(32) NULL,
+    comment            TEXT        NULL,
+    reward             INT         NULL,
+    created_at         VARCHAR(64) NOT NULL,
+    model_version      VARCHAR(32) NULL,
+    verified_label     INT         NULL,
+    adaptive_processed INT         NOT NULL DEFAULT 0,
+    updated_at         VARCHAR(64) NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+""",
+]
+
+# Additive SQLite migrations for databases created before the extended
+# schema. ALTER TABLE ADD COLUMN is used so existing rows are preserved
+# untouched. (MySQL tables are created with the full schema already.)
 _MIGRATIONS = {
     "predictions": [
         "ALTER TABLE predictions ADD COLUMN model_version TEXT",
@@ -48,8 +105,19 @@ _MIGRATIONS = {
     ],
 }
 
+_IS_MYSQL = DB_ENGINE == "mysql"
+
+# Dialect-specific SQL fragments (kept to the absolute minimum).
+_MAX_FEEDBACK_SUFFIX_SQL = (
+    "SELECT MAX(CAST(SUBSTR(feedback_id, 4) AS UNSIGNED)) AS max_suffix"
+    " FROM feedback" if _IS_MYSQL else
+    "SELECT MAX(CAST(SUBSTR(feedback_id, 4) AS INTEGER)) AS max_suffix"
+    " FROM feedback"
+)
+
 
 def _migrate(connection: sqlite3.Connection) -> None:
+    """SQLite-only additive migrations (no-op for MySQL)."""
     for table, statements in _MIGRATIONS.items():
         existing = {
             row[1]
@@ -62,10 +130,76 @@ def _migrate(connection: sqlite3.Connection) -> None:
                 connection.execute(statement)
 
 
-def _connect() -> sqlite3.Connection:
+class _MySQLConnection:
+    """Thin adapter giving a PyMySQL connection the sqlite3-style API
+    used by this module: connection.execute(sql, params),
+    connection.executemany(sql, seq) and 'with' commit/rollback.
+
+    Rows are returned as dicts (DictCursor), matching the named-column
+    access used everywhere below. '?' placeholders are translated to
+    '%s'; none of the queries embed a literal '?' inside string values.
+    """
+
+    # Accept (and ignore) row_factory assignments for API compatibility.
+    row_factory = None
+
+    def __init__(self, database: str | None = None):
+        self._conn = pymysql.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=database,
+            charset="utf8mb4",
+            cursorclass=DictCursor,
+            autocommit=False,
+        )
+
+    @staticmethod
+    def _t(sql: str) -> str:
+        return sql.replace("?", "%s")
+
+    def execute(self, sql: str, params=()):
+        cursor = self._conn.cursor()
+        cursor.execute(self._t(sql), params)
+        return cursor
+
+    def executemany(self, sql: str, seq):
+        cursor = self._conn.cursor()
+        cursor.executemany(self._t(sql), seq)
+        return cursor
+
+    def executescript(self, sql: str) -> None:  # pragma: no cover
+        for statement in sql.split(";"):
+            statement = statement.strip()
+            if statement:
+                self.execute(statement)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            if exc_type is None:
+                self._conn.commit()
+            else:
+                self._conn.rollback()
+        finally:
+            self._conn.close()
+
+
+def _connect():
+    """Open a connection to the mode-appropriate database."""
+    if _IS_MYSQL:
+        connection = _MySQLConnection(database=MYSQL_DB_NAME)
+        for statement in MYSQL_SCHEMA:
+            connection.execute(statement)
+        return connection
+
     DATABASE_DIR.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(DATABASE_PATH)
-    connection.executescript(SCHEMA)
+    connection.row_factory = sqlite3.Row
+    connection.executescript(SQLITE_SCHEMA)
     _migrate(connection)
     return connection
 
@@ -97,10 +231,8 @@ def next_feedback_id() -> str:
     derive the next ID from MAX instead of COUNT to guarantee uniqueness.
     """
     with _connect() as connection:
-        row = connection.execute(
-            "SELECT MAX(CAST(SUBSTR(feedback_id, 4) AS INTEGER)) FROM feedback"
-        ).fetchone()
-    highest = row[0] or 0
+        row = connection.execute(_MAX_FEEDBACK_SUFFIX_SQL).fetchone()
+    highest = row["max_suffix"] or 0
     return f"FB-{highest + 1:06d}"
 
 
@@ -146,7 +278,7 @@ def mark_feedback_processed(feedback_ids: list[str]) -> int:
         return cursor.rowcount
 
 
-def set_verified_label(feedback_id: str, verified_label: int) -> int:
+def set_verified_label(feedback_id: str, verified_label: int | None) -> int:
     """Set a trusted/verified clinical label for a feedback record.
 
     This is the ONLY path through which verified_label may be written,
@@ -173,7 +305,6 @@ def get_verified_feedback(only_unprocessed: bool = True) -> list[dict]:
     if only_unprocessed:
         query += " AND adaptive_processed = 0"
     with _connect() as connection:
-        connection.row_factory = sqlite3.Row
         rows = connection.execute(query).fetchall()
     return [dict(row) for row in rows]
 
@@ -184,8 +315,7 @@ def get_predictions_by_ids(prediction_ids: list[str]) -> dict[str, dict]:
         return {}
     result = {}
     with _connect() as connection:
-        connection.row_factory = sqlite3.Row
-        # Chunk to stay below SQLite's variable limit for large batches.
+        # Chunk to stay below the driver variable limit for large batches.
         for start in range(0, len(prediction_ids), 500):
             chunk = prediction_ids[start:start + 500]
             placeholders = ",".join("?" for _ in chunk)
@@ -206,7 +336,6 @@ def list_predictions(limit: int = 200) -> list[dict]:
     reported as a boolean flag, never exposed as a label value here.
     """
     with _connect() as connection:
-        connection.row_factory = sqlite3.Row
         predictions = connection.execute(
             "SELECT prediction_id, features, result, created_at, model_version"
             " FROM predictions ORDER BY created_at DESC LIMIT ?",
@@ -258,7 +387,6 @@ def get_prediction_detail(prediction_id: str) -> dict | None:
     """Read-only full record for one prediction: inputs, result and
     all associated feedback entries (verified status as flag only)."""
     with _connect() as connection:
-        connection.row_factory = sqlite3.Row
         row = connection.execute(
             "SELECT prediction_id, features, result, created_at, model_version"
             " FROM predictions WHERE prediction_id = ?",
@@ -308,7 +436,7 @@ def delete_demo_predictions(prediction_ids: list[str]) -> dict:
         return {"deleted_predictions": 0, "deleted_feedback": 0, "not_found": []}
     with _connect() as connection:
         existing = {
-            row[0]
+            row["prediction_id"]
             for row in connection.execute(
                 "SELECT prediction_id FROM predictions"
                 f" WHERE prediction_id IN ({','.join('?' for _ in prediction_ids)})",
@@ -337,8 +465,10 @@ def delete_demo_predictions(prediction_ids: list[str]) -> dict:
 
 def _count(table: str) -> int:
     with _connect() as connection:
-        row = connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()
-    return row[0]
+        row = connection.execute(
+            f"SELECT COUNT(*) AS n FROM {table}"
+        ).fetchone()
+    return row["n"]
 
 
 def count_predictions() -> int:
@@ -347,3 +477,23 @@ def count_predictions() -> int:
 
 def count_feedback() -> int:
     return _count("feedback")
+
+
+def database_info() -> dict:
+    """Sanitised engine/database description for startup diagnostics.
+
+    Never includes credentials.
+    """
+    if _IS_MYSQL:
+        return {
+            "engine": "mysql",
+            "host": DB_HOST,
+            "port": DB_PORT,
+            "database": MYSQL_DB_NAME,
+            "mode": APP_MODE,
+        }
+    return {
+        "engine": "sqlite",
+        "path": str(DATABASE_PATH),
+        "mode": APP_MODE,
+    }

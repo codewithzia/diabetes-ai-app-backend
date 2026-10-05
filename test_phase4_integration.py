@@ -9,17 +9,18 @@ Run:  python test_phase4_integration.py
 
 import hashlib
 import json
-import sqlite3
+
 from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
 
 from app.config import (
-    ADAPTIVE_MODELS_DIR, DATABASE_PATH, MODEL_PATH, MODEL_PATH,
+    ADAPTIVE_MODELS_DIR, MODEL_PATH,
     PREPROCESSOR_PATH, SELECTED_FEATURES_PATH, THESIS_DIR,
     THESIS_TEST_X_PATH, THESIS_TEST_Y_PATH,
 )
+from app.database import _connect
 from app.database import (
     count_feedback, count_predictions, save_feedback, save_prediction,
 )
@@ -141,12 +142,12 @@ check("metadata status distinguishes candidate", meta.get("status") == "candidat
 check("V0 never overwritten (no V0 dir in adaptive registry)",
       not (ADAPTIVE_MODELS_DIR / "V0").exists())
 
-with sqlite3.connect(DATABASE_PATH) as c:
+with _connect() as c:
     ok = c.execute(
         "SELECT COUNT(*) FROM feedback "
         "WHERE feedback_id IN ('FB-P4-0001','FB-P4-0002') "
         "AND adaptive_processed = 1"
-    ).fetchone()[0]
+    ).fetchone()["COUNT(*)"]
 check("successful cycle marked verified feedback processed", ok == 2)
 
 # Manual rejection (status distinguishes rejected candidates)
@@ -173,18 +174,18 @@ except ValueError as e:
     failed_run = str(e)
 check("single-class label set rejected with error", failed_run != "no-error",
       failed_run[:60])
-with sqlite3.connect(DATABASE_PATH) as c:
+with _connect() as c:
     unproc = c.execute(
         "SELECT adaptive_processed FROM feedback WHERE feedback_id='FB-P4-FAIL'"
-    ).fetchone()[0]
+    ).fetchone()["adaptive_processed"]
 check("failed cycle left feedback unprocessed", unproc == 0)
 
 # ------------------------------------------------------------------
 # 10. Cleanup temp rows; row counts restored
 # ------------------------------------------------------------------
-with sqlite3.connect(DATABASE_PATH) as c:
-    c.execute("DELETE FROM feedback WHERE feedback_id LIKE 'FB-P4-%'")
-    c.execute("DELETE FROM predictions WHERE prediction_id LIKE 'P-P4-%'")
+with _connect() as c:
+    c.execute("DELETE FROM feedback WHERE feedback_id LIKE 'FB-P4-%%'")
+    c.execute("DELETE FROM predictions WHERE prediction_id LIKE 'P-P4-%%'")
 check("database row counts restored",
       count_predictions() == before_pred and count_feedback() == before_fb)
 

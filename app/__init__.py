@@ -40,6 +40,15 @@ def create_app() -> Flask:
 
     print("=" * 80)
     print(f"APPLICATION MODE: {APP_MODE.upper()}")
+    from .database import database_info
+    info = database_info()
+    if info["engine"] == "mysql":
+        print(
+            f"DATABASE ENGINE : mysql "
+            f"({info['database']} @ {info['host']}:{info['port']})"
+        )
+    else:
+        print(f"DATABASE ENGINE : sqlite ({info['path']})")
     print("=" * 80)
 
     return app

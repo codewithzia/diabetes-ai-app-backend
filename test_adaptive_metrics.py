@@ -8,13 +8,11 @@ Run:  python test_adaptive_metrics.py
 """
 
 import json
-import sqlite3
 from datetime import datetime, timezone
 
 import requests
 
-from app.config import DATABASE_PATH
-from app.database import count_feedback, count_predictions
+from app.database import _connect, count_feedback, count_predictions
 
 BASE = "http://127.0.0.1:5000"
 results = []
@@ -52,7 +50,7 @@ check("baseline metrics preserved (static thesis results)",
 
 # --- Live-change proof: insert temp rows, expect +1 counts ---
 now = datetime.now(timezone.utc).isoformat()
-with sqlite3.connect(DATABASE_PATH) as c:
+with _connect() as c:
     c.execute(
         "INSERT INTO predictions (prediction_id, features, result, created_at,"
         " model_version) VALUES (?,?,?,?,?)",
@@ -71,7 +69,7 @@ check("endpoint reflects temp inserts (+1 each)",
       and data2["total_feedback"] == before_f + 1,
       f"api={data2}")
 
-with sqlite3.connect(DATABASE_PATH) as c:
+with _connect() as c:
     c.execute("DELETE FROM feedback WHERE feedback_id='FB-MET-TMP'")
     c.execute("DELETE FROM predictions WHERE prediction_id='P-MET-TMP'")
 

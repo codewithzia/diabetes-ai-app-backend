@@ -9,10 +9,11 @@ Run:  python test_adaptive_service.py
 """
 
 import json
-import sqlite3
+
 from datetime import datetime, timezone
 
-from app.config import DATABASE_PATH, ADAPTIVE_MODELS_DIR
+from app.config import ADAPTIVE_MODELS_DIR
+from app.database import _connect
 from app.database import (
     count_feedback, count_predictions, save_feedback, save_prediction,
 )
@@ -108,11 +109,11 @@ try:
 except ValueError:
     single_class_failed = True
 check("single-class training rejected", single_class_failed)
-with sqlite3.connect(DATABASE_PATH) as c:
+with _connect() as c:
     still = c.execute(
         "SELECT adaptive_processed FROM feedback WHERE feedback_id='FB-ADPT-0001'"
-    ).fetchone()[0]
-check("failed training left feedback unprocessed", still == 0)
+    ).fetchone()
+check("failed training left feedback unprocessed", still["adaptive_processed"] == 0)
 
 # ------------------------------------------------------------------
 # 4. Full candidate cycle on frozen thesis test set (capped sample)
@@ -155,8 +156,8 @@ check("registry active version unchanged (thesis V4 lineage)",
 # ------------------------------------------------------------------
 # 6. Feedback marked processed ONLY after success
 # ------------------------------------------------------------------
-with sqlite3.connect(DATABASE_PATH) as c:
-    processed = {r[0]: r[1] for r in c.execute(
+with _connect() as c:
+    processed = {r["feedback_id"]: r["adaptive_processed"] for r in c.execute(
         "SELECT feedback_id, adaptive_processed FROM feedback "
         "WHERE feedback_id IN ('FB-ADPT-0001','FB-ADPT-0002','FB-ADPT-UNV','FB-ADPT-ORPH')"
     )}
@@ -168,11 +169,11 @@ check("orphan feedback NOT marked processed",
       processed["FB-ADPT-ORPH"] == 0)
 check("verified_label never derived from agree/disagree",
       processed is not None)  # FB-ADPT-UNV stayed NULL; checked below
-with sqlite3.connect(DATABASE_PATH) as c:
+with _connect() as c:
     unv = c.execute(
         "SELECT verified_label FROM feedback WHERE feedback_id='FB-ADPT-UNV'"
-    ).fetchone()[0]
-check("agree row verified_label still NULL", unv is None)
+    ).fetchone()
+check("agree row verified_label still NULL", unv["verified_label"] is None)
 
 # ------------------------------------------------------------------
 # 7. Activation safety: blocked in TEST MODE
@@ -204,9 +205,9 @@ check("no new verified feedback -> pipeline skips cleanly",
 # ------------------------------------------------------------------
 # Cleanup: ONLY temp rows
 # ------------------------------------------------------------------
-with sqlite3.connect(DATABASE_PATH) as c:
-    c.execute("DELETE FROM feedback WHERE feedback_id LIKE 'FB-ADPT-%'")
-    c.execute("DELETE FROM predictions WHERE prediction_id LIKE 'P-ADPT-%'")
+with _connect() as c:
+    c.execute("DELETE FROM feedback WHERE feedback_id LIKE 'FB-ADPT-%%'")
+    c.execute("DELETE FROM predictions WHERE prediction_id LIKE 'P-ADPT-%%'")
 after_pred, after_fb = count_predictions(), count_feedback()
 print(f"\nAFTER: predictions={after_pred}, feedback={after_fb}")
 check("row counts restored",
