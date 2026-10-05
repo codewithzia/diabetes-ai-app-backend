@@ -23,6 +23,7 @@ from .routes.prediction import prediction_bp
 from .routes.feedback import feedback_bp
 from .routes.model import model_bp
 from .routes.adaptive import adaptive_bp
+from .routes.history import history_bp
 
 
 def create_app() -> Flask:
@@ -35,6 +36,7 @@ def create_app() -> Flask:
     app.register_blueprint(feedback_bp)
     app.register_blueprint(model_bp)
     app.register_blueprint(adaptive_bp)
+    app.register_blueprint(history_bp)
 
     print("=" * 80)
     print(f"APPLICATION MODE: {APP_MODE.upper()}")
