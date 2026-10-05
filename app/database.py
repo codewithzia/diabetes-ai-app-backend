@@ -90,6 +90,20 @@ def save_prediction(
         )
 
 
+def next_feedback_id() -> str:
+    """Generate a unique feedback ID based on the highest existing suffix.
+
+    Count-based IDs break when rows are removed (e.g. demo cleanup), so
+    derive the next ID from MAX instead of COUNT to guarantee uniqueness.
+    """
+    with _connect() as connection:
+        row = connection.execute(
+            "SELECT MAX(CAST(SUBSTR(feedback_id, 4) AS INTEGER)) FROM feedback"
+        ).fetchone()
+    highest = row[0] or 0
+    return f"FB-{highest + 1:06d}"
+
+
 def save_feedback(record: dict) -> None:
     """Persist a feedback record.
 
@@ -272,12 +286,52 @@ def get_prediction_detail(prediction_id: str) -> dict | None:
                 "helpfulness": fb["helpfulness"],
                 "comment": fb["comment"],
                 "reward": fb["reward"],
+                "verified_label": fb["verified_label"],
                 "has_verified_label": fb["verified_label"] is not None,
                 "adaptive_processed": bool(fb["adaptive_processed"]),
                 "created_at": fb["created_at"],
             }
             for fb in feedback_rows
         ],
+    }
+
+
+def delete_demo_predictions(prediction_ids: list[str]) -> dict:
+    """Delete explicitly identified demo/test predictions and their feedback.
+
+    SAFETY: only ever called from the test-mode-only cleanup route with an
+    explicit list of prediction IDs known to be demo/test records. Thesis
+    datasets, model artifacts and research records are never touched —
+    only rows in the active mode-specific database.
+    """
+    if not prediction_ids:
+        return {"deleted_predictions": 0, "deleted_feedback": 0, "not_found": []}
+    with _connect() as connection:
+        existing = {
+            row[0]
+            for row in connection.execute(
+                "SELECT prediction_id FROM predictions"
+                f" WHERE prediction_id IN ({','.join('?' for _ in prediction_ids)})",
+                prediction_ids,
+            )
+        }
+        not_found = [p for p in prediction_ids if p not in existing]
+        targets = [p for p in prediction_ids if p in existing]
+        if not targets:
+            return {"deleted_predictions": 0, "deleted_feedback": 0, "not_found": not_found}
+        placeholders = ",".join("?" for _ in targets)
+        deleted_feedback = connection.execute(
+            f"DELETE FROM feedback WHERE prediction_id IN ({placeholders})",
+            targets,
+        ).rowcount
+        deleted_predictions = connection.execute(
+            f"DELETE FROM predictions WHERE prediction_id IN ({placeholders})",
+            targets,
+        ).rowcount
+    return {
+        "deleted_predictions": deleted_predictions,
+        "deleted_feedback": deleted_feedback,
+        "not_found": not_found,
     }
 
 
