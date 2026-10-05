@@ -1,0 +1,38 @@
+{
+  "experiment": "Phase 5.2 Track 1 - human-feedback-guided adaptive learning validation (NB09-faithful)",
+  "created_at": "2026-10-05T08:21:17.738464+00:00",
+  "random_state": 42,
+  "base_model": {
+    "estimator": "LogisticRegression",
+    "max_iter": 2000,
+    "class_weight": null,
+    "solver": "liblinear",
+    "random_state": 42,
+    "trained_on": "full 339,166-row training set (matches recorded NB09 run, which found no saved model)"
+  },
+  "version_sequence": "NB09 cell 17: V0 = first contiguous 80%; V1-V4 add contiguous quarters of trailing 20%; retrained from scratch via sklearn clone",
+  "evaluation": {
+    "dataset": "frozen thesis test set X_test_selected/y_test",
+    "rows": 84792,
+    "thresholds": [
+      0.38,
+      0.5
+    ],
+    "learnt_from_test_set": false
+  },
+  "label_source": "true training labels as verified_label (agree/disagree and reward never used as labels)",
+  "outputs": [
+    "D:\\MSc\\Final_Thesis_Projects\\backend\\experiments\\results\\phase5_version_trajectory.csv"
+  ],
+  "artifact_sha256_before": {
+    "X_train_selected.npz": "668223353ee83f433d46929375de1f41d39622a16aabc0088c0cf3aa1e1ec06c",
+    "y_train.csv": "291cc6d7baef382617165ef9aec63597c7c3e3f670a6e4a740be231caa260a80",
+    "X_test_selected.npz": "2575102d40c85f65c4397b279f56a9ffcd2c6e96f5679bc6a4c24a000b22c9b6",
+    "y_test.csv": "980a6de39ab504d54e20a28b0514b0f549fa3c10aa43e4b38fbd2d32eac50e90",
+    "selected_feature_names.csv": "3f2a3efe5b715cbc1da2f99640fbf292fcbcd6d6be4e6a2094eacc134bbf5268",
+    "brfss_preprocessor_final.joblib": "8edbcd7e8dfd67b5e9fa4d0ad9f9c859d85aacb33a14d9c316df414847df1167",
+    "rlhf_adaptive_logistic_regression_final.joblib": "9f3e9da0aae1bf34cd1d2af0c98bed1341fd1a4aa176f40319ec84d383dc7455",
+    "08_adaptive_learning.ipynb": "736de25c7f95ed0af372e90b47d4d4c703882c89cb1a9d5ac58e461fb563ea33",
+    "09_rlhf_adaptive_learning.ipynb": "4b41d4ceec00350e7b603522d3e7deac25a235aacf35975b3cf242f2683a0dfb"
+  }
+}
