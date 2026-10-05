@@ -28,14 +28,23 @@ adaptive_bp = Blueprint("adaptive", __name__)
 
 @adaptive_bp.route("/api/adaptive/metrics", methods=["GET"])
 def adaptive_metrics():
-    """Get adaptive learning metrics across model versions."""
+    """Baseline thesis metrics alongside live database statistics.
+
+    baseline_* values are the intentional static thesis results.
+    The database section reports ACTUAL persisted counts only.
+    """
     return jsonify({
-        "performance_metrics": PERFORMANCE_METRICS,
-        "feedback_metrics": FEEDBACK_METRICS,
-        "total_feedback": count_feedback() + MODEL_INFO["feedback_observations"],
-        "total_predictions": count_predictions() + 50000,
-        "current_version": MODEL_INFO["current_version"],
-        "last_update": MODEL_INFO["last_update"],
+        "baseline_performance": PERFORMANCE_METRICS,
+        "baseline_feedback": FEEDBACK_METRICS,
+        "database": {
+            "mode": APP_MODE,
+            "total_predictions": count_predictions(),
+            "total_feedback": count_feedback(),
+        },
+        "model": {
+            "active_version": MODEL_INFO["current_version"],
+            "last_update": MODEL_INFO["last_update"],
+        },
     })
 
 

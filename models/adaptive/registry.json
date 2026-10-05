@@ -19,6 +19,19 @@
       "path": "D:\\MSc\\Final_Thesis_Projects\\backend\\models\\adaptive\\VA-0003",
       "status": "candidate",
       "created_at": "2026-10-05T06:36:24.848507+00:00"
+    },
+    "VA-0004": {
+      "path": "D:\\MSc\\Final_Thesis_Projects\\backend\\models\\adaptive\\VA-0004",
+      "status": "candidate",
+      "created_at": "2026-10-05T07:20:33.585769+00:00"
+    },
+    "VA-0005": {
+      "path": "D:\\MSc\\Final_Thesis_Projects\\backend\\models\\adaptive\\VA-0005",
+      "status": "rejected",
+      "created_at": "2026-10-05T07:20:36.280575+00:00",
+      "rejected_by": "phase4-test",
+      "rejected_at": "2026-10-05T07:20:36.298622+00:00",
+      "rejection_reason": "test rejection path"
     }
   },
   "note": "V0-V4 are frozen thesis artefacts; adaptive candidates are VA-#### versions stored under backend/models/adaptive."
