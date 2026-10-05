@@ -6,11 +6,19 @@ Loads the fitted artifacts produced by the research notebooks:
 - Final logistic regression model (49 features)
 """
 
+import json
+from pathlib import Path
+
 import joblib
 import numpy as np
 import pandas as pd
 
-from ..config import MODEL_PATH, PREPROCESSOR_PATH, SELECTED_FEATURES_PATH
+from ..config import (
+    ADAPTIVE_REGISTRY_PATH,
+    MODEL_PATH,
+    PREPROCESSOR_PATH,
+    SELECTED_FEATURES_PATH,
+)
 from ..constants import FEATURE_MAPPINGS, FRONTEND_TO_BRFSS, BRFSS_TO_FRONTEND
 
 # Missingness indicator columns (every BRFSS input except _SEX)
@@ -20,8 +28,27 @@ MISSING_INDICATOR_COLUMNS = [
     if column != "_SEX"
 ]
 
+def _resolve_model_path():
+    """Active model from the adaptive registry, else the thesis model.
+
+    Falls back to MODEL_PATH whenever no registry/activation exists, so
+    default behaviour is exactly the frozen thesis model.
+    """
+    try:
+        if ADAPTIVE_REGISTRY_PATH.exists():
+            registry = json.loads(
+                ADAPTIVE_REGISTRY_PATH.read_text(encoding="utf-8")
+            )
+            active = Path(registry.get("active_model_path", ""))
+            if active.exists():
+                return active
+    except (OSError, json.JSONDecodeError):
+        pass
+    return MODEL_PATH
+
+
 PREPROCESSOR = joblib.load(PREPROCESSOR_PATH)
-MODEL = joblib.load(MODEL_PATH)
+MODEL = joblib.load(_resolve_model_path())
 
 _selected_features = pd.read_csv(SELECTED_FEATURES_PATH)
 SELECTED_INDICES = (

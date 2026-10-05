@@ -50,3 +50,21 @@ SELECTED_FEATURES_PATH = Path(os.getenv(
     "SELECTED_FEATURES_PATH",
     THESIS_DIR / "data" / "processed" / "ml" / "selected_feature_names.csv",
 ))
+
+# Frozen thesis train/test artifacts (READ-ONLY; used by the adaptive
+# learning service for candidate evaluation only, never modified).
+THESIS_TEST_X_PATH = Path(os.getenv(
+    "THESIS_TEST_X_PATH",
+    THESIS_DIR / "data" / "processed" / "ml" / "X_test_selected.npz",
+))
+THESIS_TEST_Y_PATH = Path(os.getenv(
+    "THESIS_TEST_Y_PATH",
+    THESIS_DIR / "data" / "processed" / "ml" / "y_test.csv",
+))
+
+# Adaptive model registry (human-feedback-guided candidate versions).
+# Lives inside the backend so thesis artifacts are never overwritten.
+ADAPTIVE_MODELS_DIR = Path(os.getenv(
+    "ADAPTIVE_MODELS_DIR", BASE_DIR / "models" / "adaptive",
+))
+ADAPTIVE_REGISTRY_PATH = ADAPTIVE_MODELS_DIR / "registry.json"

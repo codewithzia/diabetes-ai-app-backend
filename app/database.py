@@ -148,6 +148,36 @@ def set_verified_label(feedback_id: str, verified_label: int) -> int:
         return cursor.rowcount
 
 
+def get_verified_feedback(only_unprocessed: bool = True) -> list[dict]:
+    """Feedback rows that may serve as supervised labels.
+
+    Only rows with a verified_label from a trusted source are returned.
+    agree/disagree feedback and reward are reward signals only and are
+    never used as training labels.
+    """
+    query = "SELECT * FROM feedback WHERE verified_label IS NOT NULL"
+    if only_unprocessed:
+        query += " AND adaptive_processed = 0"
+    with _connect() as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(query).fetchall()
+    return [dict(row) for row in rows]
+
+
+def get_predictions_by_ids(prediction_ids: list[str]) -> dict[str, dict]:
+    """Fetch prediction rows (id -> row dict) for the given ids."""
+    if not prediction_ids:
+        return {}
+    placeholders = ",".join("?" for _ in prediction_ids)
+    with _connect() as connection:
+        connection.row_factory = sqlite3.Row
+        rows = connection.execute(
+            f"SELECT * FROM predictions WHERE prediction_id IN ({placeholders})",
+            prediction_ids,
+        ).fetchall()
+    return {row["prediction_id"]: dict(row) for row in rows}
+
+
 def _count(table: str) -> int:
     with _connect() as connection:
         row = connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()
