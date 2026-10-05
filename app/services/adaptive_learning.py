@@ -413,6 +413,69 @@ def activate_model(version: str, approved_by: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# 7b. Registry status / manual rejection
+# ---------------------------------------------------------------------------
+
+def get_registry_status() -> dict:
+    """Sanitised registry view for API responses (no filesystem paths)."""
+    registry = _load_registry()
+
+    candidates = sorted(
+        (v for v in registry["versions"] if v.startswith("VA-")),
+    )
+    latest = candidates[-1] if candidates else None
+    latest_status = (
+        registry["versions"][latest]["status"] if latest else None
+    )
+
+    eligible = len(get_eligible_feedback())
+
+    return {
+        "active_version": registry.get("active_version",
+                                       MODEL_INFO["current_version"]),
+        "latest_candidate": latest,
+        "candidate_status": latest_status,
+        "adaptive_enabled": APP_MODE != "test",
+        "pending_verified_feedback": eligible,
+        "candidate_versions": {
+            v: registry["versions"][v]["status"] for v in candidates
+        },
+    }
+
+
+def reject_model(version: str, rejected_by: str, reason: str = "") -> dict:
+    """Manually reject a candidate (metadata only; never affects the
+    active model). Kept manual pending formal thesis acceptance rules."""
+    if not rejected_by or not rejected_by.strip():
+        raise ValueError("Rejection requires an explicit rejected_by.")
+
+    registry = _load_registry()
+    entry = registry["versions"].get(version)
+    if entry is None:
+        raise ValueError(f"Unknown model version: {version}")
+    if entry["status"] == "active":
+        raise ValueError("Cannot reject the active model.")
+
+    entry["status"] = "rejected"
+    entry["rejected_by"] = rejected_by
+    entry["rejected_at"] = datetime.now(timezone.utc).isoformat()
+    if reason:
+        entry["rejection_reason"] = reason
+    _save_registry(registry)
+
+    metadata_path = Path(entry["path"]) / "metadata.json"
+    if metadata_path.exists():
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        metadata["status"] = "rejected"
+        metadata_path.write_text(
+            json.dumps(metadata, indent=2), encoding="utf-8"
+        )
+
+    return {"status": "rejected", "version": version,
+            "rejected_by": rejected_by}
+
+
+# ---------------------------------------------------------------------------
 # 8. Orchestration
 # ---------------------------------------------------------------------------
 
