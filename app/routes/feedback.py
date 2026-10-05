@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
 
+from ..constants import MODEL_INFO
 from ..database import count_feedback, save_feedback
 
 feedback_bp = Blueprint("feedback", __name__)
@@ -33,6 +34,11 @@ def feedback():
         "comment": comment,
         "reward": reward,
         "timestamp": datetime.now(timezone.utc).isoformat(),
+        "model_version": MODEL_INFO["current_version"],
+        # verified_label is deliberately NOT set here: user agree/disagree
+        # is a reward signal, not a verified clinical label.
+        "verified_label": None,
+        "adaptive_processed": False,
     }
     save_feedback(feedback_record)
 

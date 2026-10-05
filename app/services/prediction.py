@@ -46,6 +46,11 @@ def run_prediction_pipeline(features: dict) -> dict:
         "explanations": generate_explanations(model_input, features),
     }
 
-    save_prediction(prediction_id, features, result)
+    save_prediction(
+        prediction_id,
+        features,
+        result,
+        model_version=MODEL_INFO["current_version"],
+    )
 
     return result
