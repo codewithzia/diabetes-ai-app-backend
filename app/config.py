@@ -3,7 +3,12 @@
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load variables from backend/.env into the environment (system env vars win).
+load_dotenv(BASE_DIR / ".env")
 
 ALLOWED_MODES = {"test", "production"}
 
