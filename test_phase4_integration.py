@@ -74,7 +74,7 @@ check("blocked response unchanged format",
 r = requests.post(f"{BASE}/api/test/predict", json={"test_case_id": "TEST-002"})
 p = r.json()
 check("/api/test/predict works (200)", r.status_code == 200)
-check("prediction threshold is 0.38", p.get("threshold") == 0.38)
+check("prediction threshold is 0.63", p.get("threshold") == 0.63)
 check("prediction model_version is V4 (thesis active model)",
       p.get("model_version") == "V4")
 
@@ -118,7 +118,12 @@ for fid, pid, label in (("FB-P4-0001", "P-P4-0001", 1),
                    "timestamp": now, "model_version": "V4",
                    "verified_label": label, "adaptive_processed": False})
 
-result = al.run_adaptive_retraining(eval_sample_size=1000)
+# Hardening defaults require >=50 verified rows / >=20 per class;
+# this test uses small floors and a small baseline sample.
+al.ADAPTIVE_MIN_VERIFIED_SAMPLES = 2
+al.ADAPTIVE_MIN_VERIFIED_PER_CLASS = 1
+result = al.run_adaptive_retraining(baseline_sample_size=500,
+                                    eval_sample_size=1000)
 meta = result.get("metadata", {})
 check("candidate created",
       result.get("status") == "candidate_created", result.get("version", ""))
@@ -137,7 +142,7 @@ check("model version artefact + metadata persisted with required fields",
       (model_dir / "model.joblib").exists()
       and (model_dir / "metadata.json").exists()
       and all(k in meta for k in required))
-check("metadata threshold preserved (0.38)", meta.get("threshold") == 0.38)
+check("metadata threshold preserved (0.63)", meta.get("threshold") == 0.63)
 check("metadata status distinguishes candidate", meta.get("status") == "candidate")
 check("V0 never overwritten (no V0 dir in adaptive registry)",
       not (ADAPTIVE_MODELS_DIR / "V0").exists())
@@ -167,13 +172,14 @@ save_feedback({"feedback_id": "FB-P4-FAIL", "prediction_id": "P-P4-FAIL",
                "comment": "single class", "reward": 1,
                "timestamp": now, "model_version": "V4",
                "verified_label": 1, "adaptive_processed": False})
-try:
-    al.run_adaptive_retraining(eval_sample_size=1000)
-    failed_run = "no-error"
-except ValueError as e:
-    failed_run = str(e)
-check("single-class label set rejected with error", failed_run != "no-error",
-      failed_run[:60])
+result_fail = al.run_adaptive_retraining(baseline_sample_size=500,
+                                         eval_sample_size=1000)
+# With hardened safeguards a single verified row is skipped by the
+# minimum-data floor BEFORE training; a ValueError from the training
+# guard is also acceptable (single-class rejection).
+guard = result_fail["reason"] if result_fail["status"] == "skipped" else ""
+check("single-class/tiny label set rejected before training",
+      result_fail["status"] in ("skipped", "candidate_invalid"), guard[:80])
 with _connect() as c:
     unproc = c.execute(
         "SELECT adaptive_processed FROM feedback WHERE feedback_id='FB-P4-FAIL'"

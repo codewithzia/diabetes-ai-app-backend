@@ -83,6 +83,15 @@ def adaptive_update():
             "active_version": MODEL_INFO["current_version"],
         })
 
+    if result["status"] == "candidate_invalid":
+        return jsonify({
+            "status": "candidate_invalid",
+            "mode": APP_MODE,
+            "reason": result["reason"],
+            "quality": result["quality"],
+            "active_version": MODEL_INFO["current_version"],
+        })
+
     comparison = result["comparison"]
     return jsonify({
         "status": "candidate_created",

@@ -1,5 +1,7 @@
 """Static model metadata, feature mappings, and explanation data."""
 
+import os
+
 # ---------------------------------------------------------------------------
 # Model metadata
 # ---------------------------------------------------------------------------
@@ -7,7 +9,7 @@ MODEL_INFO = {
     "current_model": "Logistic Regression",
     "current_version": "V4",
     "training_observations": 339166,
-    "selected_features": 49,
+    "selected_features": 50,
     "feedback_observations": 67834,
     "feedback_batches": 4,
     "last_update": "2024-12-20",
@@ -47,7 +49,10 @@ MODEL_COMPARISON = [
     {"model": "XGBoost", "accuracy": 0.8598, "precision": 0.8401, "recall": 0.8212, "f1": 0.8305, "roc_auc": 0.9078, "pr_auc": 0.8501},
 ]
 
-OPTIMIZED_THRESHOLD = 0.38
+# Deployment threshold, chosen on the leakage-safe validation split:
+# 0.63 maximizes F1; 0.465 targets >=80% recall. Override via
+# DIABETES_THRESHOLD (mirrors config.PREDICTION_THRESHOLD).
+OPTIMIZED_THRESHOLD = float(os.getenv("DIABETES_THRESHOLD", "0.63"))
 
 # ---------------------------------------------------------------------------
 # Feature mapping: frontend values to raw BRFSS 2021 codes, matching the

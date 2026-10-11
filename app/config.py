@@ -76,33 +76,71 @@ if DB_ENGINE == "mysql":
     # Explicit environment mapping — never silently falls back.
     MYSQL_DB_NAME = TEST_DB_NAME if APP_MODE == "test" else PROD_DB_NAME
 
-# Trained model artifacts. Override via environment variables to change
-# the location without touching code, e.g.:
-#   $env:PREPROCESSOR_PATH = "D:\path\to\brfss_preprocessor_final.joblib"
-#   $env:MODEL_PATH        = "D:\path\to\model.joblib"
+# Trained model artifacts (leakage-safe final experiment, notebook 05b).
+# Override the directory or individual paths via environment variables, e.g.:
+#   $env:DIABETES_MODEL_DIR = "D:\path\to\artifacts"
+#   $env:MODEL_PATH         = "D:\path\to\model.joblib"
 THESIS_DIR = Path(os.getenv("THESIS_DIR", r"D:\MSc\BRFSS_Diabetes_Thesis"))
+
+DIABETES_MODEL_DIR = Path(os.getenv(
+    "DIABETES_MODEL_DIR",
+    THESIS_DIR / "results" / "ml" / "results_leakage_safe",
+))
 
 PREPROCESSOR_PATH = Path(os.getenv(
     "PREPROCESSOR_PATH",
-    THESIS_DIR / "data" / "processed" / "ml" / "brfss_preprocessor_final.joblib",
+    DIABETES_MODEL_DIR / "leakage_safe_preprocessor.joblib",
 ))
 
 MODEL_PATH = Path(os.getenv(
     "MODEL_PATH",
-    THESIS_DIR / "results" / "ml" / "rlhf_adaptive_logistic_regression_final.joblib",
+    DIABETES_MODEL_DIR / "leakage_safe_logistic_regression.joblib",
 ))
 
 SELECTED_FEATURES_PATH = Path(os.getenv(
     "SELECTED_FEATURES_PATH",
-    THESIS_DIR / "data" / "processed" / "ml" / "selected_feature_names.csv",
+    DIABETES_MODEL_DIR / "final_selected_features.csv",
 ))
 
-# Frozen thesis train/test artifacts (READ-ONLY; used by the adaptive
-# learning service for candidate evaluation only, never modified).
+EXPERIMENT_METADATA_PATH = DIABETES_MODEL_DIR / "experiment_metadata.json"
+
+# Deployment threshold. Chosen on validation split: 0.63 maximizes F1,
+# 0.465 targets >=80% recall. Override via DIABETES_THRESHOLD.
+PREDICTION_THRESHOLD = float(os.getenv("DIABETES_THRESHOLD", "0.63"))
+
+# Frozen thesis train/test artifacts (READ-ONLY, never modified).
+# The TEST split stays fully isolated: it is never used for training,
+# candidate evaluation, threshold selection, or candidate acceptance.
 THESIS_TEST_X_PATH = Path(os.getenv(
     "THESIS_TEST_X_PATH",
-    THESIS_DIR / "data" / "processed" / "ml" / "X_test_selected.npz",
+    THESIS_DIR / "data" / "processed" / "ml" / "X_test_raw.csv",
 ))
+
+# Raw training partition (READ-ONLY). A deterministic, stratified 80/20
+# split (random_state=42, matching experiment_metadata.json
+# validation_size=0.2) derives a FIT portion for baseline sampling and a
+# VALIDATION portion for candidate evaluation — so validation rows never
+# enter candidate training data and the frozen test set is untouched.
+THESIS_TRAIN_X_PATH = Path(os.getenv(
+    "THESIS_TRAIN_X_PATH",
+    THESIS_DIR / "data" / "processed" / "ml" / "X_train_raw.csv",
+))
+THESIS_TRAIN_Y_PATH = Path(os.getenv(
+    "THESIS_TRAIN_Y_PATH",
+    THESIS_DIR / "data" / "processed" / "ml" / "y_train.csv",
+))
+
+# Adaptive-learning engineering safeguards (configurable via env vars).
+# These are NOT tuned model parameters; they are data-floor policies.
+# Calibrate per deployment: set total/per-class minima to the smallest
+# counts where a logistic-regression refit is meaningful (rule of thumb:
+# >=10 events per feature for stability => 50 features needs >= 500
+# events per class for a from-scratch fit; smaller floors are acceptable
+# when a large verified baseline sample is prepended).
+ADAPTIVE_MIN_VERIFIED_SAMPLES = int(os.getenv("ADAPTIVE_MIN_VERIFIED_SAMPLES", "50"))
+ADAPTIVE_MIN_VERIFIED_PER_CLASS = int(os.getenv("ADAPTIVE_MIN_VERIFIED_PER_CLASS", "20"))
+ADAPTIVE_BASELINE_SAMPLE_SIZE = int(os.getenv("ADAPTIVE_BASELINE_SAMPLE_SIZE", "5000"))
+ADAPTIVE_VALIDATION_FRACTION = float(os.getenv("ADAPTIVE_VALIDATION_FRACTION", "0.2"))
 THESIS_TEST_Y_PATH = Path(os.getenv(
     "THESIS_TEST_Y_PATH",
     THESIS_DIR / "data" / "processed" / "ml" / "y_test.csv",

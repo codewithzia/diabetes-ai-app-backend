@@ -10,7 +10,7 @@ This backend provides REST API endpoints for:
 - Model comparison and versioning
 
 Dataset: BRFSS 2021
-Features: 49 selected processed features
+Features: 50 selected processed features (leakage-safe experiment)
 Model: Logistic Regression with optimized threshold
 """
 

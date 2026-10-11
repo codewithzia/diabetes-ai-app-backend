@@ -92,7 +92,7 @@ check("verified unprocessed included",
 dataset = al.build_candidate_dataset(
     [r for r in eligible if r["feedback_id"].startswith("FB-ADPT")]
 )
-check("X has 49 selected features", dataset["X"].shape[1] == 49)
+check("X has 50 selected features", dataset["X"].shape[1] == 50)
 check("y from verified_label only ({0,1})",
       set(dataset["y"].tolist()) == {0, 1})
 check("orphan feedback skipped with reason",
@@ -116,9 +116,14 @@ with _connect() as c:
 check("failed training left feedback unprocessed", still["adaptive_processed"] == 0)
 
 # ------------------------------------------------------------------
-# 4. Full candidate cycle on frozen thesis test set (capped sample)
+# 4. Full candidate cycle on the validation split (capped sample).
+#    Production defaults require >=50 verified rows / >=20 per class;
+#    this test uses small floors and a small baseline sample.
 # ------------------------------------------------------------------
-result = al.run_adaptive_retraining(eval_sample_size=1000)
+al.ADAPTIVE_MIN_VERIFIED_SAMPLES = 2
+al.ADAPTIVE_MIN_VERIFIED_PER_CLASS = 1
+result = al.run_adaptive_retraining(baseline_sample_size=500,
+                                    eval_sample_size=1000)
 check("candidate created", result.get("status") == "candidate_created")
 
 meta = result["metadata"]
@@ -135,7 +140,7 @@ check("metrics are computed (0<=m<=1), not hard-coded",
       all(0.0 <= meta[k] <= 1.0
           for k in ("accuracy", "precision", "recall", "f1",
                     "roc_auc", "pr_auc")))
-check("threshold preserved (0.38)", meta["threshold"] == 0.38)
+check("threshold preserved (0.63)", meta["threshold"] == 0.63)
 check("status is candidate (no auto-activation)", meta["status"] == "candidate")
 check("parent_version is active thesis version",
       meta["parent_version"] == comp["active_version"])
