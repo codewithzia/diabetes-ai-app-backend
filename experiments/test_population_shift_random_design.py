@@ -5,6 +5,7 @@ from experiments.population_shift_random_design import (
     make_random_partitions,
     sample_feedback_random,
 )
+from experiments.population_shift_design import make_partitions
 
 
 class RandomFeedbackDesignTests(unittest.TestCase):
@@ -16,16 +17,12 @@ class RandomFeedbackDesignTests(unittest.TestCase):
                 self.states.append(f"{state}.0")
                 self.labels.append(i % 5 == 0)
 
-    def test_target_pool_test_split_does_not_depend_on_target_labels(self):
+    def test_target_test_split_matches_original_for_paired_comparison(self):
         targets = ("7", "8")
-        original = make_random_partitions(self.states, self.labels, targets, seed=91)
-        changed = self.labels.copy()
-        for i, state in enumerate(self.states):
-            if state.startswith(("7.", "8.")):
-                changed[i] = not changed[i]
-        relabeled = make_random_partitions(self.states, changed, targets, seed=91)
-        self.assertEqual(original["target_feedback_pool"], relabeled["target_feedback_pool"])
-        self.assertEqual(original["target_test"], relabeled["target_test"])
+        original = make_partitions(self.states, self.labels, targets, seed=91)
+        followup = make_random_partitions(self.states, self.labels, targets, seed=91)
+        self.assertEqual(original, followup)
+        self.assertEqual(original["target_test"], followup["target_test"])
 
     def test_random_feedback_sample_is_reproducible_and_label_blind_by_api(self):
         pool = list(range(200))

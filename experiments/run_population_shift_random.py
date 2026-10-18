@@ -1,7 +1,7 @@
 """Leakage-controlled state-held-out adaptation with label-blind feedback.
 
 The historical thesis files are read-only inputs. Every run writes to a
-fresh timestamped directory below experiments/results/population_shift_random_feedback/.
+fresh timestamped directory below experiments/results/population_shift_random_feedback_fixed_split/.
 """
 
 from __future__ import annotations
@@ -46,6 +46,9 @@ from population_shift_random_design import (
 
 
 THESIS_DIR = Path(r"D:\MSc\BRFSS_Diabetes_Thesis")
+EXPERIMENT_DIR = Path(__file__).resolve().parent
+REFERENCE_RUN = EXPERIMENT_DIR / "results" / "population_shift" / "run_20261018T064829965426Z_seed42"
+OUTPUT_ROOT = EXPERIMENT_DIR / "results" / "population_shift_random_feedback_fixed_split"
 INPUT_PATH = THESIS_DIR / "data" / "processed" / "brfss_2021_diabetes_research_base.csv"
 RAW_FEATURES = (
     "_AGEG5YR", "_SEX", "_RACE", "_EDUCAG", "_INCOMG1", "_BMI5CAT",
@@ -204,6 +207,19 @@ def _assignments_frame(partitions, states):
 def run(output_root: Path, seed=SEED):
     if not INPUT_PATH.is_file():
         raise FileNotFoundError(f"Required BRFSS input not found: {INPUT_PATH}")
+    reference_provenance_path = REFERENCE_RUN / "provenance.json"
+    reference_assignments_path = REFERENCE_RUN / "split_assignments.csv"
+    if not reference_provenance_path.is_file() or not reference_assignments_path.is_file():
+        raise FileNotFoundError(
+            "The completed label-stratified reference run is required to keep "
+            "the target test rows identical."
+        )
+    reference_provenance = json.loads(
+        reference_provenance_path.read_text(encoding="utf-8")
+    )
+    current_input_hash = sha256(INPUT_PATH)
+    if current_input_hash != reference_provenance.get("input_sha256"):
+        raise ValueError("Input data hash differs from the reference run")
     run_id = datetime.now(timezone.utc).strftime("run_%Y%m%dT%H%M%S%fZ") + f"_seed{seed}"
     out = output_root / run_id
     # _STATE defines the geographic split only; survey weights are retained
@@ -214,6 +230,16 @@ def run(output_root: Path, seed=SEED):
     states = data["_STATE"].map(normalize_state).to_numpy()
     partitions = make_random_partitions(states, y.tolist(), seed=seed)
     assignment_frame = _assignments_frame(partitions, states)
+    reference_assignments = pd.read_csv(reference_assignments_path)
+    expected_split_rows = {
+        name: set(map(int, rows)) for name, rows in
+        reference_assignments.groupby("split")["row_index"].agg(list).items()
+    }
+    current_split_rows = {
+        name: set(map(int, rows)) for name, rows in partitions.items()
+    }
+    if current_split_rows != expected_split_rows:
+        raise ValueError("Current split assignments do not match the reference run")
 
     # State and label columns are omitted from all model frames.
     raw_features = data.loc[:, RAW_FEATURES]
@@ -361,7 +387,13 @@ def run(output_root: Path, seed=SEED):
         "experiment": "leakage-controlled BRFSS population shift",
         "seed": int(seed),
         "input": str(INPUT_PATH),
-        "input_sha256": sha256(INPUT_PATH),
+        "input_sha256": current_input_hash,
+        "fixed_split_reference": {
+            "run_directory": str(REFERENCE_RUN),
+            "target_test_rows_identical": True,
+            "target_test_row_count": int(len(partitions["target_test"])),
+            "reference_split_assignments_sha256": sha256(reference_assignments_path),
+        },
         "code_sha256": {
             "experiment": sha256(Path(__file__).resolve()),
             "split_design": sha256(Path(__file__).with_name("population_shift_random_design.py")),
@@ -394,7 +426,7 @@ def run(output_root: Path, seed=SEED):
                       "selection": "maximum source validation F1"},
         "feedback_sizes": [0, *effective_sizes],
         "feedback_sampling": "uniform random without replacement; target labels are not consulted when selecting feedback rows",
-        "target_pool_test_assignment": "random 50/50 split without consulting target labels",
+        "target_pool_test_assignment": "same outcome-stratified split as reference run; fixed to preserve identical test respondents",
         "feedback_replicates_per_nonzero_size": FEEDBACK_REPLICATES,
         "primary_inference": {
             "size": PRIMARY_FEEDBACK_SIZE,
@@ -421,7 +453,7 @@ def main():
     parser.add_argument(
         "--output-root",
         type=Path,
-        default=Path(__file__).resolve().parent / "results" / "population_shift_random_feedback",
+        default=OUTPUT_ROOT,
     )
     parser.add_argument("--seed", type=int, default=SEED)
     args = parser.parse_args()
