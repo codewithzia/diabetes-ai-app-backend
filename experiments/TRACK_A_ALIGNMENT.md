@@ -62,6 +62,30 @@ test set: V4 acc 0.7334, rec 0.7664, F1 0.4387, ROC 0.8268.
 set `<col>_missing=1`, deviating from the raw-row reference with
 documented missing semantics; 26.2% happened to be identical anyway).
 
+## Addendum — input validation + leakage audit (branch `track-a-validation`)
+
+* `app/services/validation.py` (new): strict schema for `POST /api/predict` —
+  `features` must be a non-empty object containing exactly the 18 known
+  fields; each value must be a mapped category string or `null`
+  (explicit missing -> `<col>_missing=1`, notebook-03 semantics).
+  Unsupported category strings, unknown keys, missing keys, non-string
+  types, empty/absent/null `features` → **400** with `validation_errors`,
+  rejected before inference and before persistence.
+* `app/routes/prediction.py`: removed the `data.get("features", data)`
+  fallback that accepted bare bodies and empty feature objects
+  (root cause of the empty-input HTTP 200 + fabricated ~0.17 prediction).
+* `experiments/run_track_a_significance.py` (new): V0-vs-V4 check on the
+  improved dev/val trajectory — paired bootstrap + McNemar.
+* `experiments/run_track_a_parity.py` now emits `*_v2` files reflecting
+  the strict contract; v1 outputs preserved.
+* Leakage audit verdict: improved protocol keeps validation rows out of
+  all candidate training (dev-only baseline sampling enforced in
+  `adaptive_learning.py`); frozen test set used once for the final
+  improved-protocol eval. Disclosed imperfection: the frozen
+  preprocessor/feature-selection artifacts were fitted on the full
+  339,166-row training partition (which includes the validation rows)
+  — inherent to reusing the reference pipeline; test set stays clean.
+
 ## Rollback
 
 `git checkout before-resampling` or restore

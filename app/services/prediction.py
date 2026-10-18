@@ -9,6 +9,7 @@ from .model_runtime import (
     generate_explanations,
     predict_probability,
 )
+from .validation import FeatureValidationError, validate_features
 
 
 def get_risk_category(probability: float) -> str:
@@ -29,7 +30,12 @@ def run_prediction_pipeline(features: dict) -> dict:
     This is deliberately shared so that TEST MODE and
     REAL MODE cannot accidentally use different prediction
     logic.
+
+    Input is validated BEFORE model inference and BEFORE any
+    persistence: invalid requests raise FeatureValidationError and
+    never create prediction-history rows.
     """
+    features = validate_features(features)
     model_input = build_model_input(features)
     probability = predict_probability(model_input)
     prediction = 1 if probability >= OPTIMIZED_THRESHOLD else 0

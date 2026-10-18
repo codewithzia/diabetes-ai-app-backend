@@ -5,6 +5,7 @@ from flask import Blueprint, current_app, jsonify, request
 from ..config import APP_MODE
 from ..services.prediction import run_prediction_pipeline
 from ..services.test_data import TEST_PATIENTS
+from ..services.validation import FeatureValidationError
 
 prediction_bp = Blueprint("prediction", __name__)
 
@@ -56,7 +57,16 @@ def test_predict():
 
     # Use the SAME prediction function as /api/predict.
     # Do NOT create a second prediction algorithm here.
-    result = run_prediction_pipeline(TEST_PATIENTS[test_case_id]["features"])
+    try:
+        result = run_prediction_pipeline(
+            TEST_PATIENTS[test_case_id]["features"]
+        )
+    except FeatureValidationError as error:
+        return jsonify({
+            "error": f"Test case {test_case_id} contains invalid "
+                     "feature values.",
+            "validation_errors": error.errors,
+        }), 500
     result["test_case_id"] = test_case_id
     result["mode"] = "test"
 
@@ -69,12 +79,25 @@ def predict():
     if not data:
         return jsonify({"error": "JSON request body is required."}), 400
 
-    features = data.get("features", data)
+    # Strict contract: the request must carry a "features" object.
+    # No silent fallback to the raw request body.
+    if "features" not in data:
+        return jsonify({
+            "error": "'features' object is required.",
+            "validation_errors": [
+                "request body must contain a 'features' JSON object"
+            ],
+        }), 400
 
     try:
-        result = run_prediction_pipeline(features)
+        result = run_prediction_pipeline(data["features"])
         result["mode"] = APP_MODE
         return jsonify(result)
+    except FeatureValidationError as error:
+        return jsonify({
+            "error": str(error),
+            "validation_errors": error.errors,
+        }), 400
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
     except Exception:

@@ -147,11 +147,59 @@ check("response schema keys unchanged",
                               "explanations")))
 check("threshold in response = 0.50", body["threshold"] == 0.50)
 
+# ------------------------------------------------------------------
+# 5b. Invalid-input validation (reject BEFORE inference/persistence)
+# ------------------------------------------------------------------
+pred_before = count_predictions()
+
+def expect_400(name, **kwargs):
+    resp = client.post("/api/predict", **kwargs)
+    j = resp.get_json() or {}
+    ok = (resp.status_code == 400 and "error" in j)
+    check(name, ok, f"status={resp.status_code}")
+
+expect_400("missing 'features' key -> 400", json={"foo": 1})
+expect_400("bare features body (no wrapper) -> 400", json=VALID)
+expect_400("features: null -> 400", json={"features": None})
+expect_400("features: {} -> 400", json={"features": {}})
+expect_400("features: [] -> 400", json={"features": []})
+expect_400("features: 'str' -> 400", json={"features": "yes"})
 r = client.post("/api/predict", json=None)
-check("malformed request -> 400", r.status_code in (400, 415))
+check("empty body -> 400", r.status_code in (400, 415))
 r = client.post("/api/predict", data="not json",
                 content_type="application/json")
 check("non-JSON body -> 400", r.status_code == 400)
+expect_400("missing required field -> 400",
+           json={"features": {k: v for k, v in VALID.items()
+                              if k != "smoking"}})
+expect_400("unknown field -> 400",
+           json={"features": {**VALID, "bogus_field": "x"}})
+expect_400("unsupported category -> 400",
+           json={"features": {**VALID, "smoking": "former_smoker"}})
+expect_400("invalid type (number) -> 400",
+           json={"features": {**VALID, "age_group": 5}})
+expect_400("invalid type (bool) -> 400",
+           json={"features": {**VALID, "hypertension": True}})
+expect_400("empty-string value -> 400",
+           json={"features": {**VALID, "sex": ""}})
+check("invalid requests created no prediction records",
+      count_predictions() == pred_before)
+
+# Legitimate missing value: explicit null -> 200 + missing flag
+r = client.post("/api/predict",
+                json={"features": {**VALID, "smoking": None}})
+check("explicit null field -> 200 (missing semantics)",
+      r.status_code == 200)
+null_pred_id = r.get_json().get("prediction_id") \
+    if r.status_code == 200 else None
+if r.status_code == 200:
+    check("null field produced missing flag in model input",
+          mr.build_model_input({**VALID, "smoking": None})
+          ["_SMOKER3_missing"].iloc[0] == 1.0)
+    api_p = r.get_json()["probability"]
+    check("probability from loaded model, not fallback",
+          abs(api_p - round(mr.predict_probability(
+              mr.build_model_input({**VALID, "smoking": None})), 4)) < 1e-9)
 
 # ------------------------------------------------------------------
 # 6. Reviewer authorization on /feedback/<id>/verify
@@ -245,9 +293,9 @@ check("cycle lock prevents concurrent cycles",
 with _connect() as c:
     c.execute("DELETE FROM feedback WHERE feedback_id LIKE 'FB-TA-%'")
     c.execute("DELETE FROM predictions WHERE prediction_id LIKE 'P-TA-%'")
-    c.execute("DELETE FROM predictions WHERE prediction_id = ?",
-              (body.get("prediction_id"),) if body.get("prediction_id")
-              else ("__none__",))
+    for pid in {body.get("prediction_id"), null_pred_id} - {None}:
+        c.execute("DELETE FROM predictions WHERE prediction_id = ?",
+                  (pid,))
 check("row counts restored",
       count_predictions() == before_p and count_feedback() == before_f)
 

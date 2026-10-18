@@ -1,0 +1,40 @@
+{
+  "experiment": "V0 vs V4 significance check (improved_devval)",
+  "created_at": "2026-10-18T05:11:41.186649+00:00",
+  "threshold": 0.5,
+  "model_params": {
+    "class_weight": "balanced",
+    "solver": "liblinear",
+    "max_iter": 1000,
+    "random_state": 42,
+    "C": 1.0
+  },
+  "v0_training_rows": 217065,
+  "v4_training_rows": 271332,
+  "eval": "stratified 20% validation holdout of training partition",
+  "eval_rows": 67834,
+  "v0_f1": 0.44352849336455896,
+  "v4_f1": 0.4445209552724655,
+  "delta_f1": 0.0009924619079065278,
+  "bootstrap_B": 2000,
+  "ci95_delta_f1": [
+    0.0002986216182546436,
+    0.001717953285551146
+  ],
+  "ci95_delta_accuracy": [
+    0.0006486422737860265,
+    0.0015478963351711617
+  ],
+  "ci95_delta_recall": [
+    -0.0014223358436490224,
+    0.0011925767931904529
+  ],
+  "mcnemar": {
+    "b": 89,
+    "c": 163,
+    "chi2_cc": 21.146825396825395,
+    "p": 4.254053666039363e-06
+  },
+  "leakage_check": "validation rows disjoint from both models' training data (dev-only fitting)",
+  "interpretation": "Delta is not statistically distinguishable from zero if CIs contain 0 / McNemar p > 0.05."
+}

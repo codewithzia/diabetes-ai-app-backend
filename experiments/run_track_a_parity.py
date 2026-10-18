@@ -158,7 +158,7 @@ def main():
         })
 
     df = pd.DataFrame(rows)
-    df.to_csv(OUT / "track_a_backend_parity.csv", index=False)
+    df.to_csv(OUT / "track_a_backend_parity_v2.csv", index=False)
 
     ok = df[df.http_status == 200]
     repr_ok = ok[ok.n_unrepresentable_fields == 0]
@@ -182,6 +182,8 @@ def main():
     print(f"API-level (4dp-rounded p): max|d|={api_diff.max():.2e}")
 
     # ----------------- negative input tests -----------------
+    # v2 contract: invalid inputs are rejected with 400 BEFORE inference
+    # and never create prediction-history rows.
     neg = {}
     r = client.post("/api/test/predict", json={"test_case_id": "INVALID"})
     neg["unknown_test_case"] = r.status_code
@@ -189,12 +191,30 @@ def main():
                     content_type="application/json")
     neg["malformed_json"] = r.status_code
     r = client.post("/api/predict", json={"features": {}})
-    neg["empty_features"] = (r.status_code,
-                             mr.build_model_input({})[
-                                 [c for c in missing_cols]].iloc[0].sum())
+    neg["empty_features"] = r.status_code
+    r = client.post("/api/predict", json={"features": None})
+    neg["features_null"] = r.status_code
+    r = client.post("/api/predict", json={"foo": 1})
+    neg["missing_features_key"] = r.status_code
     r = client.post("/api/predict",
                     json={"features": {"smoking": "zzz"}})
     neg["unknown_value_only"] = r.status_code
+    # Legitimate missing: explicit null -> accepted, missing flag set
+    r = client.post("/api/predict",
+                    json={"features": {
+                        "age_group": "45-49", "sex": "female",
+                        "race": "white", "education": "college_graduate",
+                        "income": "25k-35k", "bmi_category": "obese",
+                        "smoking": None, "physical_activity": "no",
+                        "hypertension": "yes", "high_cholesterol": "yes",
+                        "cardiovascular_disease": "no", "stroke": "no",
+                        "kidney_disease": "no", "general_health": "poor",
+                        "health_insurance": "yes",
+                        "personal_provider": "yes", "medical_cost": "no",
+                        "checkup": "past_year"}})
+    neg["explicit_null_field"] = r.status_code
+    if r.status_code == 200:
+        backend_ids.append(r.get_json()["prediction_id"])
     # verify auth (covered in unit tests; record again here)
     r = client.post("/api/feedback/FB-X/verify",
                     json={"outcome": "diabetes"})
@@ -242,12 +262,14 @@ def main():
             "preprocessor": sha256(PREPROCESSOR_PATH),
             "selected_features": sha256(SELECTED_FEATURES_PATH),
         },
-        "outputs": [str(OUT / "track_a_backend_parity.csv")],
+        "outputs": [str(OUT / "track_a_backend_parity_v2.csv")],
+        "validation_contract": "v2 - invalid inputs rejected with 400 "
+                               "before inference; null = explicit missing",
     }
-    (OUT / "track_a_backend_parity_summary.json").write_text(
+    (OUT / "track_a_backend_parity_summary_v2.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8")
-    print(f"\nSaved: {OUT / 'track_a_backend_parity.csv'}")
-    print(f"Saved: {OUT / 'track_a_backend_parity_summary.json'}")
+    print(f"\nSaved: {OUT / 'track_a_backend_parity_v2.csv'}")
+    print(f"Saved: {OUT / 'track_a_backend_parity_summary_v2.json'}")
 
 
 if __name__ == "__main__":

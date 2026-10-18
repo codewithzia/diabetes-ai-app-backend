@@ -1,0 +1,43 @@
+{
+  "experiment": "Experiment C - backend/notebook prediction parity",
+  "created_at": "2026-10-18T05:12:19.781496+00:00",
+  "n_samples": 500,
+  "n_http_200": 500,
+  "n_unrepresentable_rows": 317,
+  "representable_parity": {
+    "tolerance": 1e-09,
+    "max_abs_diff": 0.0,
+    "fraction_within": 1.0
+  },
+  "unrepresentable_rows": {
+    "tolerance": 1e-09,
+    "max_abs_diff": 0.1284318243000001,
+    "fraction_within": 0.2618296529968454,
+    "note": "backend sets <col>_missing=1 for unrepresentable fields; deviations vs raw-row notebook path are expected and intentional (missing semantics)"
+  },
+  "api_rounded_parity": {
+    "tolerance": 5e-05,
+    "max_abs_diff": 0.12840062410000008
+  },
+  "negative_tests": {
+    "unknown_test_case": 400,
+    "malformed_json": 400,
+    "empty_features": 400,
+    "features_null": 400,
+    "missing_features_key": 400,
+    "unknown_value_only": 400,
+    "explicit_null_field": 200,
+    "verify_no_key": 401,
+    "verify_with_key_unknown_id": 404
+  },
+  "threshold": 0.5,
+  "artifact_sha256": {
+    "model": "9a0b72f7075374d3700d7e6eb090536557c1f95dd3e6685a5bad01b21b0ab838",
+    "preprocessor": "8edbcd7e8dfd67b5e9fa4d0ad9f9c859d85aacb33a14d9c316df414847df1167",
+    "selected_features": "3f2a3efe5b715cbc1da2f99640fbf292fcbcd6d6be4e6a2094eacc134bbf5268"
+  },
+  "outputs": [
+    "D:\\MSc\\Final_Thesis_Projects\\backend\\experiments\\results\\track_a_backend_parity_v2.csv"
+  ],
+  "validation_contract": "v2 - invalid inputs rejected with 400 before inference; null = explicit missing"
+}
