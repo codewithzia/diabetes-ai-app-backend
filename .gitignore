@@ -52,4 +52,4 @@ htmlcov/
 
 # Generated adaptive candidate artifacts (registry.json stays tracked;
 # version dirs are reproduce-able training outputs, kept locally for audit)
-models/adaptive/VA-*/
+# models/adaptive/VA-*/

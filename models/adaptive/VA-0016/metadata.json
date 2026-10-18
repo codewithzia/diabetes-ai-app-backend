@@ -1,0 +1,104 @@
+{
+  "version": "VA-0016",
+  "parent_version": "V4",
+  "created_at": "2026-10-11T16:20:39.143103+00:00",
+  "training_sample_count": 402,
+  "feedback_sample_count": 2,
+  "verified_feedback_count": 2,
+  "verified_class_counts": {
+    "0": 1,
+    "1": 1
+  },
+  "baseline_sample_count": 400,
+  "quality_gates": {
+    "valid": true,
+    "degenerate": false,
+    "reasons": [],
+    "probability_stats": {
+      "min": 0.002216700499943931,
+      "mean": 0.350541856347649,
+      "max": 0.9784977019800817
+    },
+    "checks": {
+      "fit_completed": true,
+      "has_both_classes": true,
+      "converged": true,
+      "finite_probabilities": true,
+      "probabilities_in_range": true,
+      "non_constant_probabilities": true,
+      "non_zero_coefficients": true
+    }
+  },
+  "feedback_ids": [
+    "FB-H-0001",
+    "FB-H-0002"
+  ],
+  "skipped_feedback": [],
+  "accuracy": 0.7975,
+  "precision": 0.3212121212121212,
+  "recall": 0.5145631067961165,
+  "f1": 0.39552238805970147,
+  "roc_auc": 0.7656809349361341,
+  "pr_auc": 0.31314037381361287,
+  "confusion_matrix": {
+    "tn": 585,
+    "fp": 112,
+    "fn": 50,
+    "tp": 53
+  },
+  "prediction_counts": {
+    "predicted_positive": 165,
+    "predicted_negative": 635
+  },
+  "threshold": 0.63,
+  "mean_reward": -1.0,
+  "evaluation": {
+    "dataset": "deterministic validation split of the thesis training partition (read-only); the frozen test set is fully isolated and never used",
+    "evaluation_samples": 800,
+    "comparison": {
+      "active_version": "V4",
+      "candidate_metrics": {
+        "accuracy": 0.7975,
+        "precision": 0.3212121212121212,
+        "recall": 0.5145631067961165,
+        "f1": 0.39552238805970147,
+        "roc_auc": 0.7656809349361341,
+        "pr_auc": 0.31314037381361287,
+        "predicted_positive": 165,
+        "predicted_negative": 635,
+        "tn": 585,
+        "fp": 112,
+        "fn": 50,
+        "tp": 53
+      },
+      "active_metrics": {
+        "accuracy": 0.8125,
+        "precision": 0.3687150837988827,
+        "recall": 0.6407766990291263,
+        "f1": 0.46808510638297873,
+        "roc_auc": 0.844200526528395,
+        "pr_auc": 0.5146195280728317,
+        "predicted_positive": 179,
+        "predicted_negative": 621,
+        "tn": 584,
+        "fp": 113,
+        "fn": 37,
+        "tp": 66
+      },
+      "delta": {
+        "accuracy": -0.015,
+        "precision": -0.047503,
+        "recall": -0.126214,
+        "f1": -0.072563,
+        "roc_auc": -0.07852,
+        "pr_auc": -0.201479
+      },
+      "threshold": 0.63,
+      "evaluation_samples": 800,
+      "acceptance_criteria": "candidate passes quality gates AND roc_auc >= active_roc_auc - 0.005 AND pr_auc >= active_pr_auc - 0.005"
+    }
+  },
+  "label_source": "feedback.verified_label only; agree/disagree and reward were never used as training labels",
+  "base_model": "LogisticRegression cloned from thesis model (liblinear, max_iter=2000, random_state=42)",
+  "status": "rejected"
+}
