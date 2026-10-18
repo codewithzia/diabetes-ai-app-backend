@@ -1,0 +1,38 @@
+{
+  "experiment": "Phase 5.3 Track 2 - backend-service validation of human-feedback-guided adaptive learning",
+  "created_at": "2026-10-05T09:19:25.553260+00:00",
+  "mode": "test (database/test.db, seeded rows cleaned afterward)",
+  "registry_isolation": "D:\\MSc\\Final_Thesis_Projects\\backend\\experiments\\models_track2",
+  "activation": "none - all candidates remain status=candidate",
+  "feedback_source": "NB09 trailing-20% pool (rows 271,332..339,166 of the thesis training set), 4 contiguous quarters",
+  "label_rule": "verified_label = true training label; agree/disagree and reward simulated (+1/-1) and never used as labels",
+  "baseline_sample_size": 271332,
+  "eval_sample_size": null,
+  "evaluation_rows": 84792,
+  "thresholds": [
+    0.38,
+    0.5
+  ],
+  "active_model": "rlhf_adaptive_logistic_regression_final.joblib (V4)",
+  "candidate_versions": [
+    "VA-0001",
+    "VA-0002",
+    "VA-0003",
+    "VA-0004"
+  ],
+  "quarter_sizes": [
+    16959,
+    16959,
+    16958,
+    16958
+  ],
+  "feature_path_fidelity_exact_match_share": 0.386,
+  "known_track2_vs_track1_differences": [
+    "features rebuilt via production frontend path; unmapped BRFSS codes (_SMOKER3 2/3, PERSDOC3 2, _INCOMG1 6/7, _RACE 5/7) become NaN and missingness indicators are always 0",
+    "baseline sample is a deterministic random 271,332-row subset, not NB09's contiguous first 80%"
+  ],
+  "outputs": [
+    "D:\\MSc\\Final_Thesis_Projects\\backend\\experiments\\results\\phase5_backend_trajectory.csv",
+    "D:\\MSc\\Final_Thesis_Projects\\backend\\experiments\\results\\phase5_backend_provenance.json"
+  ]
+}

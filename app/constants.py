@@ -6,6 +6,15 @@
 MODEL_INFO = {
     "current_model": "Logistic Regression",
     "current_version": "V4",
+    "model_track": "Track A (notebook 08, before-resampling)",
+    "model_artifact": "adaptive_logistic_regression_final.joblib",
+    "model_parameters": {
+        "class_weight": "balanced",
+        "solver": "liblinear",
+        "max_iter": 1000,
+        "random_state": 42,
+        "C": 1.0,
+    },
     "training_observations": 339166,
     "selected_features": 49,
     "feedback_observations": 67834,
@@ -21,6 +30,15 @@ MODEL_VERSIONS = [
     {"version": "V4", "label": "Final", "description": "Final model with 67,834 total feedback signals", "date": "2024-12-20"},
 ]
 
+# ---------------------------------------------------------------------------
+# DEMO / ILLUSTRATIVE CONSTANTS — NOT EXPERIMENT RESULTS.
+#
+# The values below were authored as UI demonstration data. They do NOT
+# match any notebook run, saved artifact, or regenerated experiment and
+# must never be cited as scientific results. They are kept only because
+# the dashboard UI consumes them; endpoints label them as demo data.
+# Real experiment metrics live in backend/experiments/results/.
+# ---------------------------------------------------------------------------
 PERFORMANCE_METRICS = [
     {"version": "V0", "accuracy": 0.8473, "precision": 0.8152, "recall": 0.7821, "f1": 0.7983, "roc_auc": 0.8921, "pr_auc": 0.8234},
     {"version": "V1", "accuracy": 0.8512, "precision": 0.8241, "recall": 0.7956, "f1": 0.8096, "roc_auc": 0.8967, "pr_auc": 0.8312},
@@ -47,7 +65,10 @@ MODEL_COMPARISON = [
     {"model": "XGBoost", "accuracy": 0.8598, "precision": 0.8401, "recall": 0.8212, "f1": 0.8305, "roc_auc": 0.9078, "pr_auc": 0.8501},
 ]
 
-OPTIMIZED_THRESHOLD = 0.38
+# Track A decision threshold (notebook 08 evaluated every version at 0.50).
+# The previous 0.38 value had no derivation in any notebook artifact;
+# see PHASE5_EXPERIMENTAL_PROTOCOL.md section H.4.
+OPTIMIZED_THRESHOLD = 0.50
 
 # ---------------------------------------------------------------------------
 # Feature mapping: frontend values to raw BRFSS 2021 codes, matching the

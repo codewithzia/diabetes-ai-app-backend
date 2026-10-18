@@ -1,0 +1,69 @@
+{
+  "purpose": "Pre-change baseline snapshot for Track A alignment branch",
+  "created_by": "track-a-alignment task",
+  "backend_head": "453dffaa65b34940b6439beb7f737b9251523aba",
+  "backend_branch": "before-resampling",
+  "env_nonsecret": {
+    "APP_MODE": "test",
+    "DB_ENGINE": "mysql",
+    "DB_HOST": "127.0.0.1",
+    "DB_PORT": "3306",
+    "DB_USER": "root",
+    "DB_PASSWORD": "<set>",
+    "TEST_DB_NAME": "adaptive_diabetes_test",
+    "PROD_DB_NAME": "adaptive_diabetes_prod"
+  },
+  "artifact_sha256": {
+    "D:\\MSc\\BRFSS_Diabetes_Thesis\\results\\ml\\rlhf_adaptive_logistic_regression_final.joblib": {
+      "sha256": "9f3e9da0aae1bf34cd1d2af0c98bed1341fd1a4aa176f40319ec84d383dc7455",
+      "size": 1275,
+      "exists": true
+    },
+    "D:\\MSc\\BRFSS_Diabetes_Thesis\\results\\ml\\adaptive_logistic_regression_final.joblib": {
+      "sha256": "9a0b72f7075374d3700d7e6eb090536557c1f95dd3e6685a5bad01b21b0ab838",
+      "size": 1275,
+      "exists": true
+    },
+    "D:\\MSc\\BRFSS_Diabetes_Thesis\\results\\ml\\models\\best_diabetes_model.joblib": {
+      "sha256": "68f412dd1ca7e93f5fa3d5e54ebff3516d54e0bf27511232a7c2fbfcccda7776",
+      "size": 1275,
+      "exists": true
+    },
+    "D:\\MSc\\BRFSS_Diabetes_Thesis\\data\\processed\\ml\\brfss_preprocessor_final.joblib": {
+      "sha256": "8edbcd7e8dfd67b5e9fa4d0ad9f9c859d85aacb33a14d9c316df414847df1167",
+      "size": 5640,
+      "exists": true
+    },
+    "D:\\MSc\\BRFSS_Diabetes_Thesis\\data\\processed\\ml\\selected_feature_names.csv": {
+      "sha256": "3f2a3efe5b715cbc1da2f99640fbf292fcbcd6d6be4e6a2094eacc134bbf5268",
+      "size": 1558,
+      "exists": true
+    },
+    "D:\\MSc\\BRFSS_Diabetes_Thesis\\data\\processed\\ml\\X_train_selected.npz": {
+      "sha256": "668223353ee83f433d46929375de1f41d39622a16aabc0088c0cf3aa1e1ec06c",
+      "size": 2496492,
+      "exists": true
+    },
+    "D:\\MSc\\BRFSS_Diabetes_Thesis\\data\\processed\\ml\\y_train.csv": {
+      "sha256": "291cc6d7baef382617165ef9aec63597c7c3e3f670a6e4a740be231caa260a80",
+      "size": 1017508,
+      "exists": true
+    },
+    "D:\\MSc\\BRFSS_Diabetes_Thesis\\data\\processed\\ml\\X_test_selected.npz": {
+      "sha256": "2575102d40c85f65c4397b279f56a9ffcd2c6e96f5679bc6a4c24a000b22c9b6",
+      "size": 624283,
+      "exists": true
+    },
+    "D:\\MSc\\BRFSS_Diabetes_Thesis\\data\\processed\\ml\\y_test.csv": {
+      "sha256": "980a6de39ab504d54e20a28b0514b0f549fa3c10aa43e4b38fbd2d32eac50e90",
+      "size": 254386,
+      "exists": true
+    },
+    "D:\\MSc\\BRFSS_Diabetes_Thesis\\data\\processed\\ml\\X_train_raw.csv": {
+      "sha256": "5e5661fa48339914154bd0a1cff36dd7a473cd02c8d96142e57c1f8d1d9f3e8a",
+      "size": 24099730,
+      "exists": true
+    }
+  },
+  "note": "MODEL_PATH before change = rlhf_adaptive_logistic_regression_final.joblib (NB09, class_weight=None, threshold 0.38). Track A target = adaptive_logistic_regression_final.joblib (NB08, class_weight='balanced', threshold 0.50)."
+}

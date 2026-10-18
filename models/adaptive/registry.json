@@ -1,6 +1,8 @@
 {
   "active_version": "V4",
-  "active_model_path": "D:\\MSc\\BRFSS_Diabetes_Thesis\\results\\ml\\rlhf_adaptive_logistic_regression_final.joblib",
+  "active_model_path": "D:\\MSc\\BRFSS_Diabetes_Thesis\\results\\ml\\adaptive_logistic_regression_final.joblib",
+  "active_model_track": "Track A (notebook 08; class_weight='balanced', liblinear, max_iter=1000, seed 42)",
+  "previous_active_model_path": "D:\\MSc\\BRFSS_Diabetes_Thesis\\results\\ml\\rlhf_adaptive_logistic_regression_final.joblib",
   "versions": {
     "VA-0001": {
       "path": "D:\\MSc\\Final_Thesis_Projects\\backend\\models\\adaptive\\VA-0001",

@@ -1,0 +1,5 @@
+model,model_params,eval_dataset,eval_rows,positive_rows,threshold,accuracy,precision,recall,f1,roc_auc,pr_auc,tn,fp,fn,tp
+track_a_reference,"balanced, liblinear, max_iter=1000",frozen_test_84792,84792,11523,0.5,0.731767,0.306287,0.769852,0.438226,0.826762,0.421929,53177,20092,2652,8871
+track_a_reference,"balanced, liblinear, max_iter=1000",train_validation_67834,67834,9219,0.5,0.736283,0.31088,0.772969,0.443421,0.827799,0.421746,42819,15796,2093,7126
+nb09_legacy,"class_weight=None, liblinear, max_iter=2000",frozen_test_84792,84792,11523,0.5,0.869599,0.563178,0.180248,0.273092,0.826499,0.422913,71658,1611,9446,2077
+nb09_legacy,"class_weight=None, liblinear, max_iter=2000",train_validation_67834,67834,9219,0.5,0.869122,0.55689,0.181039,0.273248,0.827491,0.422845,57287,1328,7550,1669

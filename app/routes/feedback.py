@@ -4,10 +4,23 @@ from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
 
+from ..config import REVIEWER_API_KEY
 from ..constants import MODEL_INFO
 from ..database import next_feedback_id, save_feedback, set_verified_label
 
 feedback_bp = Blueprint("feedback", __name__)
+
+
+def _reviewer_authorized():
+    """Gate for reviewer-only routes.
+
+    Requires ``REVIEWER_API_KEY`` to be configured in the environment and
+    the request to carry it in the ``X-Reviewer-Key`` header. Fails
+    closed: if no key is configured, the endpoint is disabled.
+    """
+    if not REVIEWER_API_KEY:
+        return None  # unconfigured -> disabled
+    return request.headers.get("X-Reviewer-Key") == REVIEWER_API_KEY
 
 
 @feedback_bp.route("/api/feedback", methods=["POST"])
@@ -62,11 +75,10 @@ _VERIFY_OUTCOMES = {
 def verify_feedback(feedback_id: str):
     """Record a verified clinical outcome for a feedback record.
 
-    DOCTOR/REVIEWER-ONLY WORKFLOW: this endpoint is intended to be
-    exposed only to an authorised reviewer role. This research prototype
-    has no authentication system yet, so the UI marks the feature as
-    requiring reviewer authorisation; a real deployment must gate this
-    route behind authentication/authorisation.
+    DOCTOR/REVIEWER-ONLY WORKFLOW: requires the ``X-Reviewer-Key``
+    header to match the configured ``REVIEWER_API_KEY`` environment
+    variable. If no key is configured the endpoint is disabled
+    (fail-closed).
 
     Agree/disagree feedback is NEVER a label. Only an explicit verified
     outcome submitted through this route creates a supervised label via
@@ -74,6 +86,18 @@ def verify_feedback(feedback_id: str):
     It does NOT trigger adaptive retraining; verified labels merely
     become eligible for the controlled candidate pipeline.
     """
+    authorized = _reviewer_authorized()
+    if authorized is None:
+        return jsonify({
+            "error": "Reviewer verification endpoint is disabled: "
+                     "REVIEWER_API_KEY is not configured."
+        }), 503
+    if not authorized:
+        return jsonify({
+            "error": "Reviewer authorization required "
+                     "(X-Reviewer-Key header)."
+        }), 401
+
     data = request.get_json(silent=True)
     if not data:
         return jsonify({"error": "JSON request body is required."}), 400

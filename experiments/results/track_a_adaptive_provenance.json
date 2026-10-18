@@ -1,0 +1,30 @@
+{
+  "experiment": "Experiment B - controlled adaptive trajectory",
+  "created_at": "2026-10-18T04:47:45.859391+00:00",
+  "random_state": 42,
+  "threshold": 0.5,
+  "batches": 4,
+  "model_params": {
+    "class_weight": "balanced",
+    "solver": "liblinear",
+    "max_iter": 1000,
+    "random_state": 42,
+    "C": 1.0
+  },
+  "feedback": "simulated retrospective; true training labels as verified_label; rewards/agree-disagree unused",
+  "protocols": {
+    "historical_track_a": "NB08 exact reproduction; test set reused per version (limitation flagged)",
+    "improved_devval": "dev/val holdout for trajectory; frozen test evaluated once on final version"
+  },
+  "nb08_max_abs_diff": 5.551115123125783e-17,
+  "artifact_sha256": {
+    "X_train": "668223353ee83f433d46929375de1f41d39622a16aabc0088c0cf3aa1e1ec06c",
+    "y_train": "291cc6d7baef382617165ef9aec63597c7c3e3f670a6e4a740be231caa260a80",
+    "X_test": "2575102d40c85f65c4397b279f56a9ffcd2c6e96f5679bc6a4c24a000b22c9b6",
+    "y_test": "980a6de39ab504d54e20a28b0514b0f549fa3c10aa43e4b38fbd2d32eac50e90",
+    "nb08_results": "4837e202b0af1190d7cc9068d3d7236c72af88e6b2569fdf18eceaf8c132238a"
+  },
+  "outputs": [
+    "D:\\MSc\\Final_Thesis_Projects\\backend\\experiments\\results\\track_a_adaptive_trajectory.csv"
+  ]
+}

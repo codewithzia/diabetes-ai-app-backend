@@ -21,5 +21,13 @@ def model_versions():
 
 @model_bp.route("/api/model/comparison", methods=["GET"])
 def model_comparison():
-    """Get model comparison table."""
-    return jsonify(MODEL_COMPARISON)
+    """Get model comparison table.
+
+    DEMO DATA ONLY: MODEL_COMPARISON contains hard-coded illustrative
+    values, not experiment results. See app/constants.py.
+    """
+    return jsonify({
+        "data_source": "demo (hard-coded illustrative values; not "
+                       "experiment results)",
+        "rows": MODEL_COMPARISON,
+    })

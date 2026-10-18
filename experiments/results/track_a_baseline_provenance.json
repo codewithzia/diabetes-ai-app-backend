@@ -1,0 +1,37 @@
+{
+  "experiment": "Experiment A - Track A-aligned baseline verification",
+  "created_at": "2026-10-18T04:47:26.793780+00:00",
+  "random_state": 42,
+  "threshold": 0.5,
+  "track_a_model_params": {
+    "class_weight": "balanced",
+    "solver": "liblinear",
+    "max_iter": 1000,
+    "random_state": 42,
+    "C": 1.0
+  },
+  "nb08_recorded_v4_diffs": {
+    "accuracy": 0.0,
+    "precision": 5.551115123125783e-17,
+    "recall": 0.0,
+    "f1": 0.0,
+    "roc_auc": 0.0,
+    "pr_auc": 0.0
+  },
+  "nb08_reproduced_within_1e-4": true,
+  "artifact_sha256": {
+    "track_a_model": "9a0b72f7075374d3700d7e6eb090536557c1f95dd3e6685a5bad01b21b0ab838",
+    "nb09_model": "9f3e9da0aae1bf34cd1d2af0c98bed1341fd1a4aa176f40319ec84d383dc7455",
+    "preprocessor": "8edbcd7e8dfd67b5e9fa4d0ad9f9c859d85aacb33a14d9c316df414847df1167",
+    "selected_features": "3f2a3efe5b715cbc1da2f99640fbf292fcbcd6d6be4e6a2094eacc134bbf5268",
+    "X_train": "668223353ee83f433d46929375de1f41d39622a16aabc0088c0cf3aa1e1ec06c",
+    "y_train": "291cc6d7baef382617165ef9aec63597c7c3e3f670a6e4a740be231caa260a80",
+    "X_test": "2575102d40c85f65c4397b279f56a9ffcd2c6e96f5679bc6a4c24a000b22c9b6",
+    "y_test": "980a6de39ab504d54e20a28b0514b0f549fa3c10aa43e4b38fbd2d32eac50e90",
+    "nb08_results": "4837e202b0af1190d7cc9068d3d7236c72af88e6b2569fdf18eceaf8c132238a",
+    "nb06_final_test": "fece33dd977f1c3e98b5930ca9a761dfc53bce96fe2ffddfcb5cbfd93cbe91cf"
+  },
+  "outputs": [
+    "D:\\MSc\\Final_Thesis_Projects\\backend\\experiments\\results\\track_a_baseline_metrics.csv"
+  ]
+}

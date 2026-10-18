@@ -87,9 +87,15 @@ PREPROCESSOR_PATH = Path(os.getenv(
     THESIS_DIR / "data" / "processed" / "ml" / "brfss_preprocessor_final.joblib",
 ))
 
+# Track A reference model (notebook 08, before-resampling branch):
+#   LogisticRegression(class_weight='balanced', solver='liblinear',
+#                      max_iter=1000, random_state=42), 49 selected features.
+# Previously this pointed at the NB09 artifact
+# (rlhf_adaptive_logistic_regression_final.joblib, class_weight=None);
+# the old path is preserved in experiments/baseline_before_track_a/.
 MODEL_PATH = Path(os.getenv(
     "MODEL_PATH",
-    THESIS_DIR / "results" / "ml" / "rlhf_adaptive_logistic_regression_final.joblib",
+    THESIS_DIR / "results" / "ml" / "adaptive_logistic_regression_final.joblib",
 ))
 
 SELECTED_FEATURES_PATH = Path(os.getenv(
@@ -107,6 +113,53 @@ THESIS_TEST_Y_PATH = Path(os.getenv(
     "THESIS_TEST_Y_PATH",
     THESIS_DIR / "data" / "processed" / "ml" / "y_test.csv",
 ))
+THESIS_TRAIN_X_PATH = Path(os.getenv(
+    "THESIS_TRAIN_X_PATH",
+    THESIS_DIR / "data" / "processed" / "ml" / "X_train_selected.npz",
+))
+THESIS_TRAIN_Y_PATH = Path(os.getenv(
+    "THESIS_TRAIN_Y_PATH",
+    THESIS_DIR / "data" / "processed" / "ml" / "y_train.csv",
+))
+
+# ---------------------------------------------------------------------------
+# Adaptive-learning controls.
+#
+# Baseline data is MANDATORY for candidate training: every candidate is
+# fitted on (baseline sample from the development partition) + (verified
+# feedback). Training on feedback alone is no longer permitted.
+#
+# Evaluation source for candidate comparison:
+#   "validation" (default) -> deterministic stratified 20% holdout carved
+#       from the TRAINING partition (same split as notebooks 06/06b).
+#       Candidate training never sees these rows, so candidate evaluation
+#       stays leakage-safe and the frozen test set is not reused.
+#   "test" -> legacy behaviour (frozen thesis test set); kept only for
+#       historical Track-2 reproduction, never for unbiased reporting.
+# ---------------------------------------------------------------------------
+ADAPTIVE_EVAL_SOURCE = os.getenv("ADAPTIVE_EVAL_SOURCE", "validation").lower()
+if ADAPTIVE_EVAL_SOURCE not in ("validation", "test"):
+    raise ValueError(
+        f"Invalid ADAPTIVE_EVAL_SOURCE: {ADAPTIVE_EVAL_SOURCE}."
+    )
+
+VALIDATION_SPLIT_SIZE = float(os.getenv("VALIDATION_SPLIT_SIZE", "0.20"))
+ADAPTIVE_RANDOM_STATE = int(os.getenv("ADAPTIVE_RANDOM_STATE", "42"))
+
+DEFAULT_BASELINE_SAMPLE_SIZE = int(
+    os.getenv("ADAPTIVE_BASELINE_SAMPLE_SIZE", "271332")
+)
+MIN_VERIFIED_FEEDBACK_TOTAL = int(
+    os.getenv("ADAPTIVE_MIN_FEEDBACK_TOTAL", "1000")
+)
+MIN_VERIFIED_FEEDBACK_PER_CLASS = int(
+    os.getenv("ADAPTIVE_MIN_FEEDBACK_PER_CLASS", "100")
+)
+
+# Reviewer authorization for verified-outcome submission and any future
+# activation route. If REVIEWER_API_KEY is not configured the verification
+# endpoint is disabled (fail-closed) rather than open.
+REVIEWER_API_KEY = os.getenv("REVIEWER_API_KEY", "")
 
 # Adaptive model registry (human-feedback-guided candidate versions).
 # Lives inside the backend so thesis artifacts are never overwritten.

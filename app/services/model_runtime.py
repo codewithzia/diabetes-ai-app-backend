@@ -67,15 +67,34 @@ assert len(SELECTED_INDICES) == MODEL.n_features_in_, (
 
 
 def build_model_input(raw_features: dict) -> pd.DataFrame:
-    """Build one model input row (35 columns) from frontend feature values."""
+    """Build one model input row (35 columns) from frontend feature values.
+
+    Missing-value semantics match notebook 03 (03_data_preprocessing_v2):
+    a predictor that cannot be coded becomes NaN (mode-imputed later by
+    the fitted pipeline) AND its ``<col>_missing`` indicator is set to 1.
+
+    A value is treated as missing when:
+    - the frontend key is absent from the payload, or
+    - the submitted value is not in FEATURE_MAPPINGS (i.e. a BRFSS
+      category the form vocabulary cannot represent, such as
+      ``_SMOKER3`` codes 2/3, ``PERSDOC3`` code 2, ``_INCOMG1`` 6/7,
+      ``_RACE`` 5/7).
+
+    Such inputs are therefore recorded as missing rather than silently
+    treated as valid non-missing values (the previous behaviour, which
+    hard-coded every indicator to 0).
+    """
     row = {}
+    missing_flags = {}
     for key, column in FRONTEND_TO_BRFSS.items():
         code = FEATURE_MAPPINGS.get(key, {}).get(raw_features.get(key))
         row[column] = float(code) if code is not None else np.nan
+        if column != "_SEX":
+            missing_flags[f"{column}_missing"] = (
+                0.0 if code is not None else 1.0
+            )
 
-    # The form requires every field, so no value is missing.
-    for column in MISSING_INDICATOR_COLUMNS:
-        row[column] = 0.0
+    row.update(missing_flags)
 
     return pd.DataFrame(
         [{column: row.get(column, np.nan) for column in INPUT_COLUMNS}],

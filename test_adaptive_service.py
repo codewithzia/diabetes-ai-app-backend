@@ -104,7 +104,8 @@ check("mean_reward computed as metadata (-1, -1)",
 # 3. Training guard: single-class must fail, feedback unprocessed
 # ------------------------------------------------------------------
 try:
-    al.train_candidate_model(dataset["X"][:1], dataset["y"][:1])
+    al.train_candidate_model(dataset["X"][:1], dataset["y"][:1],
+                             baseline_sample_size=500)
     single_class_failed = False
 except ValueError:
     single_class_failed = True
@@ -118,7 +119,9 @@ check("failed training left feedback unprocessed", still["adaptive_processed"] =
 # ------------------------------------------------------------------
 # 4. Full candidate cycle on frozen thesis test set (capped sample)
 # ------------------------------------------------------------------
-result = al.run_adaptive_retraining(eval_sample_size=1000)
+result = al.run_adaptive_retraining(
+    baseline_sample_size=500, eval_sample_size=1000,
+    min_feedback_total=2, min_feedback_per_class=1)
 check("candidate created", result.get("status") == "candidate_created")
 
 meta = result["metadata"]
@@ -135,7 +138,7 @@ check("metrics are computed (0<=m<=1), not hard-coded",
       all(0.0 <= meta[k] <= 1.0
           for k in ("accuracy", "precision", "recall", "f1",
                     "roc_auc", "pr_auc")))
-check("threshold preserved (0.38)", meta["threshold"] == 0.38)
+check("threshold preserved (Track A = 0.50)", meta["threshold"] == 0.50)
 check("status is candidate (no auto-activation)", meta["status"] == "candidate")
 check("parent_version is active thesis version",
       meta["parent_version"] == comp["active_version"])
@@ -196,7 +199,9 @@ check("runtime model is still the thesis model",
 # ------------------------------------------------------------------
 # 9. Re-run is a no-op (all temp verified feedback now processed)
 # ------------------------------------------------------------------
-second = al.run_adaptive_retraining(eval_sample_size=1000)
+second = al.run_adaptive_retraining(
+    baseline_sample_size=500, eval_sample_size=1000,
+    min_feedback_total=2, min_feedback_per_class=1)
 check("no new verified feedback -> pipeline skips cleanly",
       second.get("status") == "skipped" or
       (second.get("metadata", {}).get("version") != meta["version"]

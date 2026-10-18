@@ -34,8 +34,14 @@ def adaptive_metrics():
     The database section reports ACTUAL persisted counts only.
     """
     return jsonify({
+        # DEMO DATA ONLY — hard-coded illustrative constants, NOT
+        # experiment results. See app/constants.py.
         "baseline_performance": PERFORMANCE_METRICS,
         "baseline_feedback": FEEDBACK_METRICS,
+        "baseline_data_source": (
+            "demo (hard-coded illustrative values; not experiment "
+            "results — see experiments/results/ for real metrics)"
+        ),
         "database": {
             "mode": APP_MODE,
             "total_predictions": count_predictions(),
@@ -43,6 +49,8 @@ def adaptive_metrics():
         },
         "model": {
             "active_version": MODEL_INFO["current_version"],
+            "model_track": MODEL_INFO.get("model_track"),
+            "model_parameters": MODEL_INFO.get("model_parameters"),
             "last_update": MODEL_INFO["last_update"],
         },
     })
@@ -75,11 +83,20 @@ def adaptive_update():
                        "was not modified.",
         }), 500
 
-    if result["status"] == "skipped":
+    if result["status"] == "busy":
         return jsonify({
-            "status": "skipped",
+            "status": "busy",
             "mode": APP_MODE,
             "reason": result["reason"],
+            "active_version": MODEL_INFO["current_version"],
+        }), 409
+
+    if result["status"] in ("skipped", "rejected"):
+        return jsonify({
+            "status": result["status"],
+            "mode": APP_MODE,
+            "reason": result["reason"],
+            "quality_gates": result.get("quality_gates"),
             "active_version": MODEL_INFO["current_version"],
         })
 

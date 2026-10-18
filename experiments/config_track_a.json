@@ -1,0 +1,62 @@
+{
+  "experiment_config": "Track A alignment (notebook 08, before-resampling @ 9fdccf9)",
+  "created_for_branch": "track-a-alignment",
+  "reference_model": {
+    "artifact": "results/ml/adaptive_logistic_regression_final.joblib",
+    "produced_by": "notebooks/08_adaptive_learning.ipynb (model save cell)",
+    "algorithm": "LogisticRegression",
+    "parameters": {
+      "class_weight": "balanced",
+      "solver": "liblinear",
+      "max_iter": 1000,
+      "random_state": 42,
+      "C": 1.0
+    },
+    "input_features": 49
+  },
+  "preprocessor": {
+    "artifact": "data/processed/ml/brfss_preprocessor_final.joblib",
+    "produced_by": "notebooks/03_data_preprocessing_v2.ipynb",
+    "pipeline": "SimpleImputer(most_frequent) -> OneHotEncoder(handle_unknown='ignore') on 18 raw predictors + 17 missingness indicators -> 84 processed features"
+  },
+  "feature_selection": {
+    "artifact": "data/processed/ml/selected_feature_names.csv",
+    "produced_by": "notebooks/05_feature_selection.ipynb",
+    "selected_processed_features": 49,
+    "order": "consensus_rank order as stored in selected_feature_names.csv"
+  },
+  "decision_threshold": 0.5,
+  "splits": {
+    "train_test_split": {
+      "method": "stratified train_test_split(test_size=0.20, random_state=42)",
+      "source_rows": 423958,
+      "train_rows": 339166,
+      "test_rows": 84792
+    },
+    "dev_validation_split": {
+      "method": "stratified train_test_split(test_size=0.20, random_state=42) on the training partition (identical to notebooks 06/06b)",
+      "dev_rows": 271332,
+      "validation_rows": 67834,
+      "note": "validation rows == NB08 simulated-feedback pool in the historical Track A protocol"
+    }
+  },
+  "adaptive_protocol": {
+    "historical_track_a": {
+      "description": "NB08 exact reproduction: stratified 80/20 of the full training set, 4 shuffled feedback quarters (rng 42), each version evaluated on the frozen test set at 0.50. Labels = true training labels (simulated feedback). LIMITATION: test set reused for every version - reported separately.",
+      "initial_fraction": 0.8,
+      "batches": 4
+    },
+    "improved_protocol": {
+      "description": "dev/val protocol: stratified 20% validation carved from the training partition; within dev, stratified 80% initial + 20% feedback pool in 4 shuffled quarters; each version evaluated on validation at 0.50; the final version evaluated ONCE on the frozen test set.",
+      "initial_fraction": 0.8,
+      "batches": 4
+    }
+  },
+  "feedback": {
+    "type": "simulated retrospective (true training labels as verified_label)",
+    "reward_use": "descriptive metadata only; never used in optimization"
+  },
+  "metrics": ["accuracy", "precision", "recall", "f1", "roc_auc", "pr_auc"],
+  "metric_definition": "unweighted binary metrics, positive class = diabetes (1), zero_division=0",
+  "random_state": 42
+}
